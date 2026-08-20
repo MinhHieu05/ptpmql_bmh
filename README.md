@@ -5,4 +5,7 @@
 2. Chạy project
 - cd tới thư mục chứa project
 - chạy lệnh dotnet run/dotnet watch
-3. 
+3. lưu lên Github
+- git add .
+- git commit -m (Nội dung)
+- git push
