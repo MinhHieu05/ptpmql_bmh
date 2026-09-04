@@ -1,4 +1,5 @@
 **Môn học: Phát triển phần mềm quản lý**
+
 Buổi 2: offline (20/8)
 1. Su dung command J để thực hiện với Git
 2. Tạo project.Net MVC: dotnet new mvc -o DemoMVC [tức tạo thư mục]
