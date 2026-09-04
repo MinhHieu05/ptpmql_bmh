@@ -1,0 +1,130 @@
+@model DemoMVC.Models.Student
+
+@{
+    ViewData["Title"] = "Lesson 4 - Student";
+}
+
+<style>
+    body {
+        background-color: #f4f6f8;
+    }
+
+    .student-container {
+        width: 500px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 15px;
+    }
+
+    .student-title {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background-color: #007bff;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .submit-button:hover {
+        background-color: #0056b3;
+    }
+
+    .result {
+        margin-top: 30px;
+        padding: 20px;
+        background-color: white;
+        border-radius: 10px;
+    }
+
+    .result h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .student-info {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+</style>
+
+
+<div class="student-container">
+
+    <h1 class="student-title">
+        Thông tin Học viên
+    </h1>
+
+    <form method="post">
+
+        <div class="form-group">
+            <label>Họ tên</label>
+
+            <input type="text" name="Name" placeholder="Nhập họ tên..." />
+        </div>
+
+
+        <div class="form-group">
+            <label>Tuổi</label>
+
+            <input type="number" name="Age" placeholder="Nhập tuổi..." />
+        </div>
+
+
+        <button type="submit" class="submit-button">
+            Gửi dữ liệu
+        </button>
+
+    </form>
+
+
+    <!-- HIỂN THỊ KẾT QUẢ SAU KHI SUBMIT -->
+
+    @if (Model != null)
+    {
+        <div class="result">
+
+            <h2>Thông tin của bạn</h2>
+
+            <div class="student-info">
+
+                <div>
+                    <strong>Họ tên:</strong>
+                    @Model.Name
+                </div>
+
+                <div>
+                    <strong>Tuổi:</strong>
+                    @Model.Age
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
