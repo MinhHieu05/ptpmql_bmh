@@ -84,8 +84,6 @@
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/4zkt78b4uj-{0}-muycvpuwrr-muycvpuwrr.gz
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/9oii8m2kst-{0}-87fc7y1x7t-87fc7y1x7t.gz
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/spxu58lbjx-{0}-mlv21k5csn-mlv21k5csn.gz
-/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/q1zz9avq9c-{0}-46kuxno3zy-46kuxno3zy.gz
-/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/h0opwfbn65-{0}-46kuxno3zy-46kuxno3zy.gz
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/staticwebassets.build.json
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/staticwebassets.build.json.cache
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/staticwebassets.development.json
@@ -96,3 +94,6 @@
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/DemoMVC.pdb
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/DemoMVC.genruntimeconfig.cache
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/ref/DemoMVC.dll
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/zh0qolvzz9-{0}-ijywpur1uz-ijywpur1uz.gz
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/q1zz9avq9c-{0}-hrl614am5m-hrl614am5m.gz
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/h0opwfbn65-{0}-hrl614am5m-hrl614am5m.gz

@@ -1,0 +1,74 @@
+/* ===== GIAO DIỆN CHUNG LESSON 5 ===== */
+
+.lesson5-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 35px;
+    background-color: #ffffff;
+}
+
+/* Tiêu đề */
+.lesson5-title {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+/* Khung nhập dữ liệu */
+.lesson5-form {
+    padding: 30px;
+    border: 2px solid #e5e7eb;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    background-color: #f8fafc;
+}
+
+/* Nhãn Họ tên */
+.lesson5-form .form-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Ô nhập họ tên */
+.lesson5-form .form-control {
+    height: 10px;
+    border-radius: 10px;
+    border: 1px solid #ced4da;
+    padding: 10px 15px;
+    font-size: 17px;
+}
+
+/* Khi bấm vào ô nhập */
+.lesson5-form .form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Nút Gửi dữ liệu */
+.lesson5-button {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 30px;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    background-color: orange !important;
+    border-color: orange !important;
+}
+
+/* Hiệu ứng khi di chuột vào nút */
+.lesson5-button:hover {
+    opacity: 0.9;
+}
+
+/* Khung thông báo TempData */
+.lesson5-message {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #8bb9e3;
+    color: #333;
+    font-size: 24px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}

@@ -9,13 +9,13 @@ a.navbar-brand[b-b3yyl1iqp1] {
 }
 
 a[b-b3yyl1iqp1] {
-  color: #0077cc;
+  color: red;
 }
 
 .btn-primary[b-b3yyl1iqp1] {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: orange;
+  border-color: orange;
 }
 
 .nav-pills .nav-link.active[b-b3yyl1iqp1], .nav-pills .show > .nav-link[b-b3yyl1iqp1] {
