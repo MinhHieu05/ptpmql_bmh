@@ -1,9 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 namespace DemoMVC.Models
 {
     public class Student
     {
-        public string Name { get; set; }
-
-        public int Age { get; set; }
+        [Key]
+        public string StudentCode { get; set; } = default!;
+        public string Name { get; set; } = default!;
+        public string Age { get; set; } = default!;
+        public string? Address { get; set; }
+        public string Email { get; set; } = default!;
     }
 }

@@ -9,6 +9,12 @@ public class StudentController : Controller
     {
         return View();
     }
+     public IActionResult Index(Student std)
+    {
+        var result="Hello" + std.Name + " - " + std.Age + " - " + std.Address;
+        ViewBag.Result = result;
+        return View();
+    }
 
     public IActionResult Create()
     {
