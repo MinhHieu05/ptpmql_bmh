@@ -1,3 +1,4 @@
+
 @model DemoMVC.Models.Student
 
 @{
@@ -11,10 +12,12 @@
 
     .student-container {
         width: 500px;
+        max-width: 95%;
         margin: 50px auto;
         padding: 30px;
         background-color: white;
         border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .student-title {
@@ -34,7 +37,9 @@
 
     .form-group input {
         width: 100%;
+        box-sizing: border-box;
         padding: 10px;
+        border: 1px solid #ccc;
         border-radius: 8px;
     }
 
@@ -56,8 +61,9 @@
     .result {
         margin-top: 30px;
         padding: 20px;
-        background-color: white;
+        background-color: #f8f9fa;
         border-radius: 10px;
+        overflow-wrap: anywhere;
     }
 
     .result h2 {
@@ -72,28 +78,41 @@
     }
 </style>
 
-
 <div class="student-container">
 
-    <h1 class="student-title">
-        Thông tin Học viên
-    </h1>
+    <h1 class="student-title">Thông tin Học viên</h1>
 
-    <form method="post">
+    <form asp-controller="Lesson4" asp-action="Index" method="post">
 
         <div class="form-group">
-            <label>Họ tên</label>
-
-            <input type="text" name="Name" placeholder="Nhập họ tên..." />
+            <label asp-for="Name">Họ và tên</label>
+            <input asp-for="Name" type="text" placeholder="Nhập họ tên..." />
         </div>
-
 
         <div class="form-group">
-            <label>Tuổi</label>
-
-            <input type="number" name="Age" placeholder="Nhập tuổi..." />
+            <label asp-for="StudentCode">Mã sinh viên</label>
+            <input asp-for="StudentCode" type="text" placeholder="Nhập mã sinh viên..." />
         </div>
 
+        <div class="form-group">
+            <label asp-for="Major">Ngành học</label>
+            <input asp-for="Major" type="text" placeholder="Nhập ngành học..." />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="DateOfBirth">Ngày sinh</label>
+            <input asp-for="DateOfBirth" type="date" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Address">Địa chỉ</label>
+            <input asp-for="Address" type="text" placeholder="Nhập địa chỉ..." />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email">Email</label>
+            <input asp-for="Email" type="email" placeholder="Nhập email..." />
+        </div>
 
         <button type="submit" class="submit-button">
             Gửi dữ liệu
@@ -101,29 +120,42 @@
 
     </form>
 
-
-    <!-- HIỂN THỊ KẾT QUẢ SAU KHI SUBMIT -->
-
     @if (Model != null)
     {
         <div class="result">
-
             <h2>Thông tin của bạn</h2>
 
             <div class="student-info">
-
                 <div>
-                    <strong>Họ tên:</strong>
+                    <strong>Họ và tên:</strong>
                     @Model.Name
                 </div>
 
                 <div>
-                    <strong>Tuổi:</strong>
-                    @Model.Age
+                    <strong>Mã sinh viên:</strong>
+                    @Model.StudentCode
                 </div>
 
-            </div>
+                <div>
+                    <strong>Ngành học:</strong>
+                    @Model.Major
+                </div>
 
+                <div>
+                    <strong>Ngày sinh:</strong>
+                    @Model.DateOfBirth.ToString("dd/MM/yyyy")
+                </div>
+
+                <div>
+                    <strong>Địa chỉ:</strong>
+                    @Model.Address
+                </div>
+
+                <div>
+                    <strong>Email:</strong>
+                    @Model.Email
+                </div>
+            </div>
         </div>
     }
 
