@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cổng sinh viên</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/student-portal.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body class="student-portal-body">
+    <nav class="navbar navbar-expand-lg student-navbar">
+        <div class="container">
+            @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+            {
+                <a class="navbar-brand fw-semibold" asp-area="" asp-controller="Student" asp-action="Profiles">
+                    DemoMVC <span class="student-nav-label">Cổng sinh viên</span>
+                </a>
+            }
+            else if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.Create))
+            {
+                <a class="navbar-brand fw-semibold" asp-area="" asp-controller="Student" asp-action="Register">
+                    DemoMVC <span class="student-nav-label">Cổng sinh viên</span>
+                </a>
+            }
+            else
+            {
+                <a class="navbar-brand fw-semibold" asp-area="" asp-controller="Home" asp-action="Index">
+                    DemoMVC <span class="student-nav-label">Cổng sinh viên</span>
+                </a>
+            }
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#student-navigation" aria-controls="student-navigation"
+                    aria-expanded="false" aria-label="Mở điều hướng">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="student-navigation">
+                <div class="navbar-nav me-auto">
+                    @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+                    {
+                        <a class="nav-link" asp-area="" asp-controller="Student" asp-action="Profiles">Hồ sơ của tôi</a>
+                    }
+                    @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.Create))
+                    {
+                        <a class="nav-link" asp-area="" asp-controller="Student" asp-action="Register">Đăng ký hồ sơ</a>
+                    }
+                    <a class="nav-link" asp-area="" asp-controller="PublicStudents" asp-action="Index">Danh sách công khai</a>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Manage">Tài khoản</a>
+                    <span class="student-account-name">@User.Identity?.Name</span>
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                        <button class="btn btn-sm btn-outline-success" type="submit">Đăng xuất</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="container student-portal-main">@RenderBody()</main>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

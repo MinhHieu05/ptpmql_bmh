@@ -1,0 +1,147 @@
+.admin-body {
+    min-height: 100vh;
+    margin: 0;
+    background: #f3f5f9;
+    color: #202b3c;
+}
+
+.admin-shell {
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 10;
+    display: flex;
+    width: 250px;
+    flex-direction: column;
+    padding: 1.25rem 1rem;
+    background: #17243b;
+    color: #fff;
+}
+
+.admin-brand {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem .4rem 1.5rem;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-brand-mark {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border-radius: .7rem;
+    background: #5478dc;
+    font-size: 1.25rem;
+}
+
+.admin-brand-subtitle {
+    display: block;
+    margin-top: .1rem;
+    color: #9cacc6;
+    font-size: .62rem;
+    letter-spacing: .13em;
+}
+
+.admin-nav {
+    display: grid;
+    gap: .35rem;
+}
+
+.admin-nav a {
+    display: block;
+    padding: .75rem .85rem;
+    border-radius: .55rem;
+    color: #d7dfed;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.admin-nav a:hover,
+.admin-nav a:focus-visible {
+    background: #263856;
+    color: #fff;
+}
+
+.admin-sidebar-footer {
+    display: grid;
+    gap: .7rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid #34425a;
+}
+
+.admin-sidebar-user {
+    overflow: hidden;
+    color: #bac6d9;
+    font-size: .8rem;
+    text-overflow: ellipsis;
+}
+
+.admin-main {
+    min-height: 100vh;
+    margin-left: 250px;
+}
+
+.admin-topbar {
+    display: flex;
+    height: 64px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    border-bottom: 1px solid #e6e9ef;
+    background: #fff;
+}
+
+.admin-content {
+    padding: 2rem;
+}
+
+.admin-eyebrow {
+    color: #5478dc;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .13em;
+}
+
+.student-sort {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    text-align: left;
+}
+
+.student-sort:hover,
+.student-sort:focus-visible {
+    color: #3156a6;
+    text-decoration: underline;
+}
+
+@media (max-width: 767.98px) {
+    .admin-sidebar {
+        position: static;
+        width: 100%;
+        min-height: auto;
+    }
+
+    .admin-sidebar-footer {
+        display: none;
+    }
+
+    .admin-main {
+        margin-left: 0;
+    }
+
+    .admin-content {
+        padding: 1rem;
+    }
+}

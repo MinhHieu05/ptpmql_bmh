@@ -42,5 +42,12 @@ namespace DemoMVC.Models
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
+
+        public string? UserId { get; set; }
+
+        public ApplicationUser? Owner { get; set; }
+
+        [Display(Name = "Đã duyệt")]
+        public bool IsApproved { get; set; } = true;
     }
 }

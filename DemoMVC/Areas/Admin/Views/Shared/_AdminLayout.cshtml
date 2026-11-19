@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Admin DemoMVC</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/admin-portal.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body class="admin-body">
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <a href="/Admin" class="admin-brand">
+                <span class="admin-brand-mark">D</span>
+                <span>DemoMVC<span class="admin-brand-subtitle">ADMIN PORTAL</span></span>
+            </a>
+            <nav class="admin-nav" aria-label="Điều hướng quản trị">
+                <a href="/Admin">Tổng quan</a>
+                <a href="/Admin/Students">Quản lý sinh viên</a>
+                <a href="/Admin/Users">Phân quyền quản lý tài khoản</a>
+                <a href="/PublicStudents">Danh sách công khai</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <span class="admin-sidebar-user">@User.Identity?.Name</span>
+                <a href="/Account/Manage" class="link-light">Thông tin tài khoản / Đổi mật khẩu</a>
+                <form action="/Account/Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-light w-100" type="submit">Đăng xuất</button>
+                </form>
+            </div>
+        </aside>
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <span>Khu vực quản trị</span>
+                <span class="badge text-bg-light">Admin</span>
+            </header>
+            <div class="admin-content">@RenderBody()</div>
+        </main>
+    </div>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

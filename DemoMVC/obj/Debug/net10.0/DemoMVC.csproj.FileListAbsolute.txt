@@ -372,3 +372,11 @@
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/bin/Debug/net10.0/runtimes/win-arm64/native/e_sqlite3.dll
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/bin/Debug/net10.0/runtimes/win-x64/native/e_sqlite3.dll
 /Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/bin/Debug/net10.0/runtimes/win-x86/native/e_sqlite3.dll
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/r4qduzgn76-{0}-kij3sxgkcx-kij3sxgkcx.gz
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/bin/Debug/net10.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/q1al0oapey-{0}-zpxfmx8zjg-zpxfmx8zjg.gz
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/e5gus4crgw-{0}-xmat0x6unq-xmat0x6unq.gz
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/35kf99zm88-{0}-c8qd5w2tdn-c8qd5w2tdn.gz
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/bin/Debug/net10.0/MailKit.dll
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/bin/Debug/net10.0/MimeKit.Core.dll
+/Users/hieuminhbui05/Documents/GitHub/ptpmql_bmh/DemoMVC/obj/Debug/net10.0/compressed/eo31nqh8np-{0}-9jb2o6sgip-9jb2o6sgip.gz

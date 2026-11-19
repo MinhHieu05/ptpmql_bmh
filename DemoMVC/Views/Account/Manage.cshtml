@@ -1,0 +1,35 @@
+@model DemoMVC.Models.ManageAccountViewModel
+
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="h3 mb-4">Thông tin tài khoản</h1>
+        @if (TempData["AccountMessage"] is string message)
+        {
+            <div class="alert alert-success" role="status">@message</div>
+        }
+        <form asp-action="Manage" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+                <div class="form-text">Thay đổi email chỉ có hiệu lực sau khi xác nhận liên kết được gửi đến email mới.</div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PhoneNumber" class="form-label"></label>
+                <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Lưu thông tin</button>
+            <a asp-action="ChangePassword" class="btn btn-outline-secondary">Đổi mật khẩu</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

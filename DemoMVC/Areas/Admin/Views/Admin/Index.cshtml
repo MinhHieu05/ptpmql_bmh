@@ -1,0 +1,47 @@
+@{
+    Layout = "/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Quản trị";
+}
+
+<section class="admin-dashboard">
+    <p class="admin-eyebrow">ADMIN PORTAL</p>
+    <h1 class="h2">Trang chủ quản trị</h1>
+    <p class="text-secondary">Chọn chức năng bên dưới để quản lý hệ thống.</p>
+
+    <div class="row g-3 mt-2">
+        <div class="col-sm-6 col-xl-4">
+            <a href="/Admin/Students" class="card h-100 border-0 shadow-sm text-decoration-none text-reset">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Quản lý sinh viên</h2>
+                    <p class="text-secondary mb-3">Xem hồ sơ, duyệt đăng ký và quản lý thông tin sinh viên.</p>
+                    <p class="display-6 fw-semibold mb-0">@ViewBag.StudentCount</p>
+                    <span class="text-secondary small">hồ sơ trong hệ thống</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <a href="/Admin/Users" class="card h-100 border-0 shadow-sm text-decoration-none text-reset">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Phân quyền quản lý tài khoản</h2>
+                    <p class="text-secondary mb-0">Cấp quyền xem, thêm, sửa, xóa hồ sơ sinh viên cho từng User; quản lý role và trạng thái tài khoản.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <a href="/PublicStudents" class="card h-100 border-0 shadow-sm text-decoration-none text-reset">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Danh sách sinh viên công khai</h2>
+                    <p class="text-secondary mb-0">Xem danh sách hồ sơ đã được duyệt và chức năng tìm kiếm.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <a href="/Account/Manage" class="card h-100 border-0 shadow-sm text-decoration-none text-reset">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Thông tin tài khoản</h2>
+                    <p class="text-secondary mb-0">Cập nhật email, số điện thoại hoặc đổi mật khẩu Admin.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>

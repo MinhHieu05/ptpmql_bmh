@@ -1,0 +1,81 @@
+@model DemoMVC.Models.StudentPortalCreateViewModel
+
+@{
+    Layout = "/Views/Student/_StudentLayout.cshtml";
+    ViewData["Title"] = "Đăng ký hồ sơ sinh viên";
+}
+
+<section class="student-portal-form">
+    <div class="mb-4">
+        <p class="student-eyebrow mb-2">CỔNG SINH VIÊN</p>
+        <h1 class="h2">Đăng ký hồ sơ sinh viên</h1>
+        <p class="text-secondary">Mã sinh viên sẽ được hệ thống tạo tự động sau khi đăng ký.</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="status">@successMessage</div>
+    }
+
+    <form asp-action="Register" method="post" class="student-portal-card">
+        <div class="card-body p-4">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" type="email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="EnrollmentYear" class="form-label"></label>
+                    <select asp-for="EnrollmentYear" asp-items="ViewBag.EnrollmentYears" class="form-select"></select>
+                    <span asp-validation-for="EnrollmentYear" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="TrainingSystem" class="form-label"></label>
+                    <select asp-for="TrainingSystem" asp-items="ViewBag.TrainingSystems" class="form-select">
+                        <option value="">-- Chọn hệ đào tạo --</option>
+                    </select>
+                    <span asp-validation-for="TrainingSystem" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="MajorCode" class="form-label"></label>
+                    <select asp-for="MajorCode" asp-items="ViewBag.Majors" class="form-select">
+                        <option value="">-- Chọn ngành học --</option>
+                    </select>
+                    <span asp-validation-for="MajorCode" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="DateOfBirth" class="form-label"></label>
+                    <input asp-for="DateOfBirth" type="date" class="form-control" />
+                    <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Address" class="form-label"></label>
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white p-3 d-flex justify-content-end gap-2">
+            @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+            {
+                <a asp-action="Profiles" class="btn btn-outline-secondary">Hủy</a>
+            }
+            <button type="submit" class="btn btn-primary">Gửi đăng ký</button>
+        </div>
+    </form>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/student-portal.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

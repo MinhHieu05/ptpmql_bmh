@@ -1,0 +1,114 @@
+@model IReadOnlyList<DemoMVC.Models.AdminUserListItemViewModel>
+
+@{
+    Layout = "/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Phân quyền quản lý tài khoản";
+}
+
+<section>
+    <p class="admin-eyebrow mb-2">QUẢN TRỊ HỆ THỐNG</p>
+    <h1 class="h2 mb-2">Phân quyền quản lý tài khoản</h1>
+    <p class="text-secondary mb-4">
+        Chọn quyền hồ sơ sinh viên cho từng tài khoản User. Mỗi User chỉ thao tác trên hồ sơ do chính họ tạo.
+    </p>
+
+    @if (TempData["AdminUsersMessage"] is string message)
+    {
+        <div class="alert alert-success" role="status">@message</div>
+    }
+    @if (TempData["AdminUsersError"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+
+    <div class="table-responsive bg-white rounded shadow-sm">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Email / trạng thái</th>
+                    <th>Vai trò</th>
+                    <th>Quyền hồ sơ sinh viên</th>
+                    <th>Trạng thái tài khoản</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var account in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@account.Email</div>
+                            <small class="text-secondary">
+                                @(account.EmailConfirmed ? "Email đã xác thực" : "Email chưa xác thực")
+                            </small>
+                        </td>
+                        <td>
+                            <form asp-area="Admin" asp-controller="AdminUsers" asp-action="ChangeRole"
+                                  asp-route-id="@account.Id" method="post" class="d-flex gap-2">
+                                @Html.AntiForgeryToken()
+                                <select name="role" class="form-select form-select-sm"
+                                        aria-label="Vai trò của @account.Email">
+                                    <option value="User" selected="@(account.Role == "User")">User</option>
+                                    <option value="Admin" selected="@(account.Role == "Admin")">Admin</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Lưu</button>
+                            </form>
+                        </td>
+                        <td>
+                            @if (account.Role == "User")
+                            {
+                                <form asp-area="Admin" asp-controller="AdminUsers"
+                                      asp-action="SaveStudentPermissions" asp-route-id="@account.Id"
+                                      method="post" class="d-flex flex-wrap align-items-center gap-3">
+                                    @Html.AntiForgeryToken()
+                                    <label class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" name="CanView"
+                                               value="true" checked="@account.CanViewStudentProfiles" />
+                                        <span class="form-check-label">Xem</span>
+                                    </label>
+                                    <label class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" name="CanCreate"
+                                               value="true" checked="@account.CanCreateStudentProfiles" />
+                                        <span class="form-check-label">Thêm</span>
+                                    </label>
+                                    <label class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" name="CanEdit"
+                                               value="true" checked="@account.CanEditStudentProfiles" />
+                                        <span class="form-check-label">Sửa</span>
+                                    </label>
+                                    <label class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" name="CanDelete"
+                                               value="true" checked="@account.CanDeleteStudentProfiles" />
+                                        <span class="form-check-label">Xóa</span>
+                                    </label>
+                                    <button type="submit" class="btn btn-sm btn-primary">Lưu quyền</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-secondary">Không áp dụng cho Admin</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="mb-2">@(account.IsLockedOut ? "Đã khóa" : "Đang hoạt động")</div>
+                            <form asp-area="Admin" asp-controller="AdminUsers" asp-action="SetLockout"
+                                  asp-route-id="@account.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="locked" value="@(!account.IsLockedOut)" />
+                                <button type="submit"
+                                        class="btn btn-sm @(account.IsLockedOut ? "btn-outline-success" : "btn-outline-danger")">
+                                    @(account.IsLockedOut ? "Mở khóa" : "Khóa")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-secondary py-4">Chưa có tài khoản.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

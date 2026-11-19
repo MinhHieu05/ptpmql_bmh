@@ -1,0 +1,63 @@
+@model DemoMVC.Models.Student
+@using DemoMVC.Services
+
+@{
+    Layout = "/Views/Student/_StudentLayout.cshtml";
+    ViewData["Title"] = "Chi tiết hồ sơ";
+    var canEdit = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Edit);
+    var canDelete = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Delete);
+}
+
+<section class="student-portal-form">
+    <p class="student-eyebrow mb-2">HỒ SƠ CỦA TÔI</p>
+    <h1 class="h2 mb-4">Chi tiết hồ sơ</h1>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="status">@successMessage</div>
+    }
+
+    <dl class="row student-portal-card p-4">
+        <dt class="col-sm-4">Mã sinh viên</dt>
+        <dd class="col-sm-8">@Model.StudentCode</dd>
+        <dt class="col-sm-4">Họ và tên</dt>
+        <dd class="col-sm-8">@Model.Name</dd>
+        <dt class="col-sm-4">Ngành học</dt>
+        <dd class="col-sm-8">@(Model.Major?.MajorName ?? Model.MajorCode)</dd>
+        <dt class="col-sm-4">Năm nhập học</dt>
+        <dd class="col-sm-8">@Model.EnrollmentYear</dd>
+        <dt class="col-sm-4">Trạng thái</dt>
+        <dd class="col-sm-8">@(Model.IsApproved ? "Đã duyệt" : "Chờ Admin duyệt")</dd>
+        <dt class="col-sm-4">Hệ đào tạo</dt>
+        <dd class="col-sm-8">@(Model.TrainingSystem == "21" ? "Đại học chính quy" : Model.TrainingSystem == "20" ? "Đại học không chính quy" : Model.TrainingSystem)</dd>
+        <dt class="col-sm-4">Ngày sinh</dt>
+        <dd class="col-sm-8">@Model.DateOfBirth.ToString("dd/MM/yyyy")</dd>
+        <dt class="col-sm-4">Địa chỉ</dt>
+        <dd class="col-sm-8">@(Model.Address ?? "—")</dd>
+        <dt class="col-sm-4">Email</dt>
+        <dd class="col-sm-8">@Model.Email</dd>
+    </dl>
+
+    @if (canEdit || canDelete)
+    {
+        <div class="d-flex gap-2 mb-3">
+            @if (canEdit)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.StudentCode" class="btn btn-primary">Sửa hồ sơ</a>
+            }
+            @if (canDelete)
+            {
+                <a asp-action="Delete" asp-route-id="@Model.StudentCode" class="btn btn-outline-danger">Xóa hồ sơ</a>
+            }
+        </div>
+    }
+    @if (!canEdit)
+    {
+        <p class="text-secondary small">Cần thay đổi thông tin? Vui lòng liên hệ quản trị viên.</p>
+    }
+    <a asp-action="Profiles" class="btn btn-outline-secondary">Quay lại hồ sơ của tôi</a>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/student-portal.css" asp-append-version="true" />
+}

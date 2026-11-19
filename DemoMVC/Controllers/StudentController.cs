@@ -1,335 +1,164 @@
-
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using DemoMVC.Data;
+using DemoMVC.Models;
+using DemoMVC.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using DemoMVC.Data;
-using DemoMVC.Models;
 
 namespace DemoMVC.Controllers
 {
-    public class StudentController : Controller
+    [Authorize(Roles = "User")]
+    [Route("[controller]")]
+    public sealed class StudentController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly StudentCodeGenerator _codeGenerator;
+        private readonly ILogger<StudentController> _logger;
 
-        public StudentController(ApplicationDbContext context)
+        public StudentController(
+            ApplicationDbContext context,
+            StudentCodeGenerator codeGenerator,
+            ILogger<StudentController> logger)
         {
             _context = context;
+            _codeGenerator = codeGenerator;
+            _logger = logger;
         }
 
-        // Tải danh sách ngành học
-        private void LoadMajors(object? selectedMajor = null)
+        [HttpGet("")]
+        public IActionResult Index()
         {
-            ViewBag.MajorCode = new SelectList(
-                _context.Majors.OrderBy(m => m.MajorName).ToList(),
-                "MajorCode",
-                "MajorName",
-                selectedMajor
-            );
-        }
-
-        // Tải danh sách năm nhập học
-        private void LoadEnrollmentYears(int? selectedYear = null)
-        {
-            int currentYear = DateTime.Now.Year;
-
-            var years = Enumerable.Range(currentYear - 5, 11)
-                .OrderByDescending(y => y)
-                .Select(y => new
-                {
-                    Value = y,
-                    Text = y.ToString()
-                })
-                .ToList();
-
-            ViewBag.EnrollmentYear = new SelectList(
-                years,
-                "Value",
-                "Text",
-                selectedYear ?? currentYear
-            );
-        }
-
-        // Tải danh sách hệ đào tạo
-        private void LoadTrainingSystems(string? selectedSystem = null)
-        {
-            var systems = new[]
+            if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View))
             {
-                new { Value = "20", Text = "Đại học không chính quy" },
-                new { Value = "21", Text = "Đại học chính quy" }
-            };
-
-            ViewBag.TrainingSystem = new SelectList(
-                systems,
-                "Value",
-                "Text",
-                selectedSystem
-            );
-        }
-
-        // Tạo mã sinh viên tự động
-        private async Task<string> GenerateStudentCode(
-            int enrollmentYear,
-            string trainingSystem,
-            string majorCode)
-        {
-            string yearCode = (enrollmentYear % 100).ToString("D2");
-
-            string majorNumber = majorCode switch
-            {
-                "QTKD" => "01",
-                "KT" => "02",
-                "NNA" => "03",
-                "KHAC" => "04",
-                "CNTT" => "05",
-                _ => throw new ArgumentException("Mã ngành không hợp lệ.")
-            };
-
-            if (trainingSystem != "20" && trainingSystem != "21")
-            {
-                throw new ArgumentException("Hệ đào tạo không hợp lệ.");
+                return RedirectToAction(nameof(Profiles));
             }
 
-            string prefix = yearCode + trainingSystem + majorNumber;
-
-            var existingCodes = await _context.Students
-                .Where(s => s.StudentCode.StartsWith(prefix))
-                .Select(s => s.StudentCode)
-                .ToListAsync();
-
-            int maxNumber = existingCodes
-                .Where(code => code.Length == prefix.Length + 4)
-                .Select(code =>
-                {
-                    string suffix = code.Substring(prefix.Length);
-
-                    return int.TryParse(suffix, out int number)
-                        ? number
-                        : 0;
-                })
-                .DefaultIfEmpty(0)
-                .Max();
-
-            if (maxNumber >= 9999)
+            if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Create))
             {
-                throw new InvalidOperationException(
-                    "Nhóm sinh viên này đã đạt giới hạn 9999 mã."
-                );
+                return RedirectToAction(nameof(Register));
             }
 
-            return prefix + (maxNumber + 1).ToString("D4");
+            return RedirectToAction("AccessDenied", "Account");
         }
 
-        // GET: Student
-        public async Task<IActionResult> Index()
+        [Authorize(Policy = "StudentProfiles.View")]
+        [HttpGet("Profiles")]
+        public async Task<IActionResult> Profiles()
         {
+            var userId = GetCurrentUserId();
             var students = await _context.Students
-                .Include(s => s.Major)
+                .AsNoTracking()
+                .Include(student => student.Major)
+                .Where(student => student.UserId == userId)
+                .OrderByDescending(student => student.EnrollmentYear)
+                .ThenBy(student => student.StudentCode)
                 .ToListAsync();
 
-            return View(students);
+            return View("Index", students);
         }
 
-        // GET: Student/Details
-        public async Task<IActionResult> Details(string id)
+        [Authorize(Policy = "StudentProfiles.Create")]
+        [HttpGet("Register")]
+        public async Task<IActionResult> Register()
         {
-            if (id == null)
+            await LoadFormOptionsAsync(DateTime.Now.Year);
+            return View(new StudentPortalCreateViewModel
             {
-                return NotFound();
-            }
-
-            var student = await _context.Students
-                .Include(s => s.Major)
-                .FirstOrDefaultAsync(s => s.StudentCode == id);
-
-            if (student == null)
-            {
-                return NotFound();
-            }
-
-            return View(student);
+                EnrollmentYear = DateTime.Now.Year
+            });
         }
 
-        // GET: Student/Create
-        public IActionResult Create()
-        {
-            LoadMajors();
-            LoadEnrollmentYears();
-            LoadTrainingSystems();
-
-            return View();
-        }
-
-        // POST: Student/Create
-        [HttpPost]
+        [Authorize(Policy = "StudentProfiles.Create")]
+        [HttpPost("Register")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            [Bind("Name,EnrollmentYear,TrainingSystem,MajorCode,DateOfBirth,Address,Email")]
-            Student student)
+        public async Task<IActionResult> Register(StudentPortalCreateViewModel input)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid &&
+                !await _context.Majors.AnyAsync(major => major.MajorCode == input.MajorCode))
             {
-                try
-                {
-                    student.StudentCode = await GenerateStudentCode(
-                        student.EnrollmentYear,
-                        student.TrainingSystem,
-                        student.MajorCode
-                    );
-
-                    _context.Students.Add(student);
-                    await _context.SaveChangesAsync();
-
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (ArgumentException ex)
-                {
-                    ModelState.AddModelError(string.Empty, ex.Message);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    ModelState.AddModelError(string.Empty, ex.Message);
-                }
-                catch (DbUpdateException)
-                {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        "Không thể lưu sinh viên. Hãy kiểm tra mã ngành và dữ liệu đã nhập."
-                    );
-                }
-            }
-
-            LoadMajors(student.MajorCode);
-            LoadEnrollmentYears(student.EnrollmentYear);
-            LoadTrainingSystems(student.TrainingSystem);
-
-            return View(student);
-        }
-
-        // GET: Student/Edit
-        public async Task<IActionResult> Edit(string id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var student = await _context.Students.FindAsync(id);
-
-            if (student == null)
-            {
-                return NotFound();
-            }
-
-            LoadMajors(student.MajorCode);
-            LoadEnrollmentYears(student.EnrollmentYear);
-            LoadTrainingSystems(student.TrainingSystem);
-
-            return View(student);
-        }
-
-        // POST: Student/Edit
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            string id,
-            [Bind("StudentCode,Name,EnrollmentYear,TrainingSystem,MajorCode,DateOfBirth,Address,Email")]
-            Student student)
-        {
-            if (id != student.StudentCode)
-            {
-                return NotFound();
+                ModelState.AddModelError(nameof(input.MajorCode), "Ngành học không tồn tại.");
             }
 
             if (!ModelState.IsValid)
             {
-                var errors = ModelState
-                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
-                    .SelectMany(x => x.Value!.Errors.Select(e =>
-                        $"{x.Key}: {e.ErrorMessage}"));
-
-                foreach (var error in errors)
-                {
-                    Console.WriteLine("LỖI KIỂM TRA: " + error);
-                }
+                await LoadFormOptionsAsync(input.EnrollmentYear, input.TrainingSystem, input.MajorCode);
+                return View(input);
             }
-            else
+
+            try
             {
-                try
-                {
-                    student.StudentCode = await GenerateStudentCode(
-                        student.EnrollmentYear,
-                        student.TrainingSystem,
-                        student.MajorCode
-                    );
+                var studentCode = await _codeGenerator.GenerateAsync(
+                    input.EnrollmentYear,
+                    input.TrainingSystem,
+                    input.MajorCode);
 
-                    _context.Students.Add(student);
-                    await _context.SaveChangesAsync();
+                var student = new Student
+                {
+                    StudentCode = studentCode,
+                    Name = input.Name.Trim(),
+                    EnrollmentYear = input.EnrollmentYear,
+                    TrainingSystem = input.TrainingSystem,
+                    MajorCode = input.MajorCode,
+                    DateOfBirth = input.DateOfBirth!.Value,
+                    Address = input.Address?.Trim(),
+                    Email = input.Email.Trim(),
+                    UserId = GetCurrentUserId(),
+                    IsApproved = false
+                };
 
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (ArgumentException ex)
+                _context.Students.Add(student);
+                await _context.SaveChangesAsync();
+
+                var message =
+                    $"Đã gửi hồ sơ thành công. Mã sinh viên: {student.StudentCode}. Hồ sơ đang chờ Admin duyệt.";
+                if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View))
                 {
-                    ModelState.AddModelError(string.Empty, ex.Message);
+                    TempData["SuccessMessage"] = message;
+                    return RedirectToAction(nameof(Profile), new { id = student.StudentCode });
                 }
-                catch (InvalidOperationException ex)
-                {
-                    ModelState.AddModelError(string.Empty, ex.Message);
-                }
-                catch (DbUpdateException)
-                {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        "Không thể lưu sinh viên. Hãy kiểm tra mã ngành và dữ liệu đã nhập."
-                    );
-                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction(nameof(Register));
             }
+            catch (ArgumentException exception)
             {
-                try
-                {
-                    _context.Update(student);
-                    await _context.SaveChangesAsync();
-
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StudentExists(student.StudentCode))
-                    {
-                        return NotFound();
-                    }
-
-                    throw;
-                }
-                catch (DbUpdateException)
-                {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        "Không thể lưu thay đổi. Hãy kiểm tra dữ liệu đã nhập."
-                    );
-                }
+                ModelState.AddModelError(string.Empty, exception.Message);
+                await LoadFormOptionsAsync(input.EnrollmentYear, input.TrainingSystem, input.MajorCode);
+                return View(input);
             }
-
-            LoadMajors(student.MajorCode);
-            LoadEnrollmentYears(student.EnrollmentYear);
-            LoadTrainingSystems(student.TrainingSystem);
-
-            return View(student);
+            catch (InvalidOperationException exception)
+            {
+                ModelState.AddModelError(string.Empty, exception.Message);
+                await LoadFormOptionsAsync(input.EnrollmentYear, input.TrainingSystem, input.MajorCode);
+                return View(input);
+            }
+            catch (DbUpdateException exception)
+            {
+                _logger.LogError(exception, "Could not register student for account {UserId}.", GetCurrentUserId());
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Không thể lưu hồ sơ. Mã sinh viên có thể vừa được tạo đồng thời; vui lòng thử lại.");
+                await LoadFormOptionsAsync(input.EnrollmentYear, input.TrainingSystem, input.MajorCode);
+                return View(input);
+            }
         }
 
-        // GET: Student/Delete
-        public async Task<IActionResult> Delete(string id)
+        [Authorize(Policy = "StudentProfiles.View")]
+        [HttpGet("Profile/{id?}")]
+        public async Task<IActionResult> Profile(string? id)
         {
-            if (id == null)
+            if (string.IsNullOrWhiteSpace(id))
             {
-                return NotFound();
+                return RedirectToAction(nameof(Profiles));
             }
 
             var student = await _context.Students
-                .Include(s => s.Major)
-                .FirstOrDefaultAsync(s => s.StudentCode == id);
+                .AsNoTracking()
+                .Include(item => item.Major)
+                .FirstOrDefaultAsync(item =>
+                    item.StudentCode == id && item.UserId == GetCurrentUserId());
 
             if (student == null)
             {
@@ -339,25 +168,195 @@ namespace DemoMVC.Controllers
             return View(student);
         }
 
-        // POST: Student/Delete
-        [HttpPost, ActionName("Delete")]
+        [Authorize(Policy = "StudentProfiles.Edit")]
+        [HttpGet("Edit/{id}")]
+        public async Task<IActionResult> Edit(string id)
+        {
+            var student = await _context.Students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item =>
+                    item.StudentCode == id && item.UserId == GetCurrentUserId());
+
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            var input = new StudentPortalEditViewModel
+            {
+                Name = student.Name,
+                EnrollmentYear = student.EnrollmentYear,
+                TrainingSystem = student.TrainingSystem,
+                MajorCode = student.MajorCode,
+                DateOfBirth = student.DateOfBirth,
+                Address = student.Address,
+                Email = student.Email
+            };
+            await LoadFormOptionsAsync(
+                input.EnrollmentYear,
+                input.TrainingSystem,
+                input.MajorCode);
+            ViewBag.StudentCode = student.StudentCode;
+            ViewBag.WasApproved = student.IsApproved;
+            return View(input);
+        }
+
+        [Authorize(Policy = "StudentProfiles.Edit")]
+        [HttpPost("Edit/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(string id, StudentPortalEditViewModel input)
+        {
+            if (ModelState.IsValid &&
+                !await _context.Majors.AnyAsync(major => major.MajorCode == input.MajorCode))
+            {
+                ModelState.AddModelError(nameof(input.MajorCode), "Ngành học không tồn tại.");
+            }
+
+            var student = await _context.Students.FirstOrDefaultAsync(item =>
+                item.StudentCode == id && item.UserId == GetCurrentUserId());
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            var wasApproved = student.IsApproved;
+            if (!ModelState.IsValid)
+            {
+                await LoadFormOptionsAsync(
+                    input.EnrollmentYear,
+                    input.TrainingSystem,
+                    input.MajorCode);
+                ViewBag.StudentCode = student.StudentCode;
+                ViewBag.WasApproved = student.IsApproved;
+                return View(input);
+            }
+
+            student.Name = input.Name.Trim();
+            student.EnrollmentYear = input.EnrollmentYear;
+            student.TrainingSystem = input.TrainingSystem;
+            student.MajorCode = input.MajorCode;
+            student.DateOfBirth = input.DateOfBirth!.Value;
+            student.Address = input.Address?.Trim();
+            student.Email = input.Email.Trim();
+            student.IsApproved = false;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Could not update student {StudentCode} for account {UserId}.",
+                    id,
+                    GetCurrentUserId());
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Không thể cập nhật hồ sơ lúc này. Vui lòng thử lại.");
+                await LoadFormOptionsAsync(
+                    input.EnrollmentYear,
+                    input.TrainingSystem,
+                    input.MajorCode);
+                ViewBag.StudentCode = student.StudentCode;
+                ViewBag.WasApproved = wasApproved;
+                return View(input);
+            }
+
+            TempData["SuccessMessage"] =
+                "Hồ sơ đã được cập nhật và chuyển về trạng thái Chờ Admin duyệt.";
+            if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View))
+            {
+                return RedirectToAction(nameof(Profile), new { id });
+            }
+
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        [Authorize(Policy = "StudentProfiles.Delete")]
+        [HttpGet("Delete/{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var student = await _context.Students
+                .AsNoTracking()
+                .Where(item => item.StudentCode == id && item.UserId == GetCurrentUserId())
+                .Select(item => new StudentDeleteViewModel
+                {
+                    StudentCode = item.StudentCode,
+                    Name = item.Name
+                })
+                .FirstOrDefaultAsync();
+
+            return student == null ? NotFound() : View(student);
+        }
+
+        [Authorize(Policy = "StudentProfiles.Delete")]
+        [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            var student = await _context.Students.FindAsync(id);
-
-            if (student != null)
+            var student = await _context.Students.FirstOrDefaultAsync(item =>
+                item.StudentCode == id && item.UserId == GetCurrentUserId());
+            if (student == null)
             {
-                _context.Students.Remove(student);
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
 
-            return RedirectToAction(nameof(Index));
+            var deleted = new StudentDeleteViewModel
+            {
+                StudentCode = student.StudentCode,
+                Name = student.Name
+            };
+            _context.Students.Remove(student);
+            await _context.SaveChangesAsync();
+
+            ViewBag.StudentCanCreate =
+                User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Create);
+            ViewBag.StudentCanView =
+                User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View);
+            return View("DeleteCompleted", deleted);
         }
 
-        private bool StudentExists(string id)
+        private string GetCurrentUserId()
         {
-            return _context.Students.Any(s => s.StudentCode == id);
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new InvalidOperationException("The authenticated account has no user identifier.");
+        }
+
+        private async Task LoadFormOptionsAsync(
+            int enrollmentYear,
+            string? trainingSystem = null,
+            string? majorCode = null)
+        {
+            var currentYear = DateTime.Now.Year;
+            var years = Enumerable.Range(currentYear - 5, 11)
+                .OrderByDescending(year => year)
+                .Select(year => new SelectListItem(year.ToString(), year.ToString()));
+
+            ViewBag.EnrollmentYears = new SelectList(
+                years,
+                nameof(SelectListItem.Value),
+                nameof(SelectListItem.Text),
+                enrollmentYear);
+
+            ViewBag.TrainingSystems = new SelectList(
+                new[]
+                {
+                    new SelectListItem("Đại học không chính quy", "20"),
+                    new SelectListItem("Đại học chính quy", "21")
+                },
+                nameof(SelectListItem.Value),
+                nameof(SelectListItem.Text),
+                trainingSystem);
+
+            ViewBag.Majors = new SelectList(
+                await _context.Majors.AsNoTracking()
+                    .OrderBy(major => major.MajorName)
+                    .Select(major => new SelectListItem(major.MajorName, major.MajorCode))
+                    .ToListAsync(),
+                nameof(SelectListItem.Value),
+                nameof(SelectListItem.Text),
+                majorCode);
         }
     }
 }

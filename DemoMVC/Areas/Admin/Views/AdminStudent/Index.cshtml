@@ -1,0 +1,267 @@
+@model DemoMVC.Models.StudentIndexViewModel
+
+@{
+    Layout = "/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Quản lý sinh viên";
+}
+
+<section id="student-page"
+         class="student-page"
+         data-list-url="@Url.Content("~/Admin/Students/list")"
+         data-create-url="@Url.Content("~/Admin/Students/create")"
+         data-student-url="@Url.Content("~/Admin/Students")">
+    <div class="student-heading">
+        <div>
+            <p class="admin-eyebrow mb-2">DỮ LIỆU HỆ THỐNG</p>
+            <h1 class="h2 mb-1">Quản lý sinh viên</h1>
+            <p class="text-secondary mb-0">Danh sách sinh viên và hồ sơ do tài khoản đăng ký.</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#create-student-modal">
+            + Thêm sinh viên
+        </button>
+    </div>
+
+    <div id="student-notice" class="alert d-none" role="status" aria-live="polite"></div>
+    <div class="student-card">
+        <div class="student-filters flex-wrap">
+            <div class="student-search">
+                <label for="student-search" class="form-label">Tìm kiếm</label>
+                <input id="student-search" class="form-control" type="search" placeholder="Mã, họ tên hoặc email" />
+            </div>
+            <div class="student-major-filter">
+                <label for="student-major-filter" class="form-label">Ngành học</label>
+                <select id="student-major-filter" class="form-select">
+                    <option value="">Tất cả ngành học</option>
+                    @foreach (var major in Model.Majors)
+                    {
+                        <option value="@major.MajorCode">@major.MajorName</option>
+                    }
+                </select>
+            </div>
+            <div class="student-major-filter">
+                <label for="student-year-filter" class="form-label">Năm nhập học</label>
+                <select id="student-year-filter" class="form-select">
+                    <option value="">Tất cả các năm</option>
+                    @foreach (var year in Model.EnrollmentYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="student-major-filter">
+                <label for="student-system-filter" class="form-label">Hệ đào tạo</label>
+                <select id="student-system-filter" class="form-select">
+                    <option value="">Tất cả hệ</option>
+                    <option value="21">Đại học chính quy</option>
+                    <option value="20">Đại học không chính quy</option>
+                </select>
+            </div>
+            <div class="student-major-filter">
+                <label for="student-approval-filter" class="form-label">Trạng thái hồ sơ</label>
+                <select id="student-approval-filter" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="pending">Chờ duyệt</option>
+                    <option value="approved">Đã duyệt</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table student-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th><button type="button" class="student-sort" data-sort="studentCode">Mã sinh viên</button></th>
+                        <th><button type="button" class="student-sort" data-sort="name">Họ và tên</button></th>
+                        <th><button type="button" class="student-sort" data-sort="enrollmentYear">Năm</button></th>
+                        <th><button type="button" class="student-sort" data-sort="trainingSystem">Hệ đào tạo</button></th>
+                        <th><button type="button" class="student-sort" data-sort="majorCode">Ngành học</button></th>
+                        <th><button type="button" class="student-sort" data-sort="email">Email</button></th>
+                        <th>Tài khoản tạo hồ sơ</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="student-table-body">
+                    <tr><td colspan="9" class="student-table-message">Đang tải danh sách...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="student-pagination">
+            <span id="student-page-summary" class="text-secondary" aria-live="polite"></span>
+            <div class="btn-group" role="group" aria-label="Phân trang danh sách sinh viên">
+                <button id="student-previous-page" type="button" class="btn btn-outline-secondary btn-sm">Trước</button>
+                <button id="student-next-page" type="button" class="btn btn-outline-secondary btn-sm">Sau</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="create-student-modal" tabindex="-1" aria-labelledby="create-student-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="create-student-form" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="create-student-title">Thêm sinh viên</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="student-form-errors alert alert-danger d-none" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="create-name" class="form-label">Họ và tên *</label>
+                            <input id="create-name" name="Name" class="form-control" required />
+                            <span class="field-error" data-valmsg-for="Name"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="create-email" class="form-label">Email *</label>
+                            <input id="create-email" name="Email" type="email" class="form-control" required />
+                            <span class="field-error" data-valmsg-for="Email"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="create-year" class="form-label">Năm nhập học *</label>
+                            <select id="create-year" name="EnrollmentYear" class="form-select" required>
+                                @foreach (var year in Model.EnrollmentYears)
+                                {
+                                    <option value="@year" selected="@(year == Model.CurrentYear)">@year</option>
+                                }
+                            </select>
+                            <span class="field-error" data-valmsg-for="EnrollmentYear"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="create-system" class="form-label">Hệ đào tạo *</label>
+                            <select id="create-system" name="TrainingSystem" class="form-select" required>
+                                <option value="">-- Chọn hệ đào tạo --</option>
+                                <option value="21">Đại học chính quy</option>
+                                <option value="20">Đại học không chính quy</option>
+                            </select>
+                            <span class="field-error" data-valmsg-for="TrainingSystem"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="create-major" class="form-label">Ngành học *</label>
+                            <select id="create-major" name="MajorCode" class="form-select" required>
+                                <option value="">-- Chọn ngành học --</option>
+                                @foreach (var major in Model.Majors)
+                                {
+                                    <option value="@major.MajorCode">@major.MajorName</option>
+                                }
+                            </select>
+                            <span class="field-error" data-valmsg-for="MajorCode"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="create-dob" class="form-label">Ngày sinh *</label>
+                            <input id="create-dob" name="DateOfBirth" type="date" class="form-control" required />
+                            <span class="field-error" data-valmsg-for="DateOfBirth"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="create-address" class="form-label">Địa chỉ</label>
+                            <input id="create-address" name="Address" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="button-label">Thêm sinh viên</span>
+                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="edit-student-modal" tabindex="-1" aria-labelledby="edit-student-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="edit-student-form" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="edit-student-title">Chỉnh sửa sinh viên</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="student-form-errors alert alert-danger d-none" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label for="edit-code" class="form-label">Mã sinh viên</label><input id="edit-code" class="form-control" readonly /></div>
+                        <div class="col-md-6"><label for="edit-major" class="form-label">Ngành học</label><input id="edit-major" class="form-control" readonly /></div>
+                        <div class="col-md-6"><label for="edit-year" class="form-label">Năm nhập học</label><input id="edit-year" class="form-control" readonly /></div>
+                        <div class="col-md-6"><label for="edit-system" class="form-label">Hệ đào tạo</label><input id="edit-system" class="form-control" readonly /></div>
+                        <div class="col-md-6">
+                            <label for="edit-name" class="form-label">Họ và tên *</label>
+                            <input id="edit-name" name="Name" class="form-control" required />
+                            <span class="field-error" data-valmsg-for="Name"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit-email" class="form-label">Email *</label>
+                            <input id="edit-email" name="Email" type="email" class="form-control" required />
+                            <span class="field-error" data-valmsg-for="Email"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit-dob" class="form-label">Ngày sinh *</label>
+                            <input id="edit-dob" name="DateOfBirth" type="date" class="form-control" required />
+                            <span class="field-error" data-valmsg-for="DateOfBirth"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit-address" class="form-label">Địa chỉ</label>
+                            <input id="edit-address" name="Address" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="button-label">Lưu thay đổi</span>
+                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="details-student-modal" tabindex="-1" aria-labelledby="details-student-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="details-student-title">Chi tiết sinh viên</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body" id="student-details-content"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="delete-student-modal" tabindex="-1" aria-labelledby="delete-student-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="delete-student-form">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="delete-student-title">Xác nhận xóa</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="student-form-errors alert alert-danger d-none" role="alert"></div>
+                    <p>Bạn có chắc chắn muốn xóa hồ sơ này?</p>
+                    <strong id="delete-student-name"></strong>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">
+                        <span class="button-label">Xóa sinh viên</span>
+                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/student.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/student.js" asp-append-version="true"></script>
+}

@@ -16,5 +16,16 @@ namespace DemoMVC.Data
         public DbSet<Employee> Employees { get; set; } = default!;
         public DbSet<Score> Scores { get; set; } = default!;
         public DbSet<Major> Majors { get; set; } = default!;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Student>()
+                .HasOne(student => student.Owner)
+                .WithMany()
+                .HasForeignKey(student => student.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        }
     }
 }

@@ -1,0 +1,16 @@
+@model DemoMVC.Models.AccountMessageViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="alert @(Model.Succeeded ? "alert-success" : "alert-warning")" role="status">
+            <h1 class="h4">@Model.Title</h1>
+            <p class="mb-0">@Model.Message</p>
+        </div>
+        <a asp-action="Login" class="btn btn-primary">Đăng nhập</a>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-link">Trang chủ</a>
+    </div>
+</div>
