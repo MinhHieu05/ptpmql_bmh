@@ -1,12 +1,13 @@
 @model IReadOnlyList<DemoMVC.Models.Student>
-@using DemoMVC.Services
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
 
 @{
     Layout = "/Views/Student/_StudentLayout.cshtml";
     ViewData["Title"] = "Cổng sinh viên";
-    var canCreate = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Create);
-    var canEdit = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Edit);
-    var canDelete = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Delete);
+    var canCreate = await PermissionService.IsAllowedAsync(User, null, "Student", "Register");
+    var canEdit = await PermissionService.IsAllowedAsync(User, null, "Student", "Edit");
+    var canDelete = await PermissionService.IsAllowedAsync(User, null, "Student", "Delete");
+    var canViewProfile = await PermissionService.IsAllowedAsync(User, null, "Student", "Profile");
 }
 
 <section class="student-portal">
@@ -69,8 +70,11 @@
                                     }
                                 </td>
                                 <td class="text-end">
-                                    <a asp-action="Profile" asp-route-id="@student.StudentCode"
-                                       class="btn btn-sm btn-outline-primary">Xem hồ sơ</a>
+                                    @if (canViewProfile)
+                                    {
+                                        <a asp-action="Profile" asp-route-id="@student.StudentCode"
+                                           class="btn btn-sm btn-outline-primary">Xem hồ sơ</a>
+                                    }
                                     @if (canEdit)
                                     {
                                         <a asp-action="Edit" asp-route-id="@student.StudentCode"

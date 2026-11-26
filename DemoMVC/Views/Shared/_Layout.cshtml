@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
+
+@{
+    var canViewStudentProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Profiles");
+    var canCreateStudentProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Register");
+}
+
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -59,15 +66,15 @@
                                 </a>
                             </li>
                         }
-                        else if (User.IsInRole("User"))
+                        else if (User.Identity?.IsAuthenticated == true)
                         {
-                            @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+                            @if (canViewStudentProfiles)
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" href="/Student/Profiles">Hồ sơ của tôi</a>
                                 </li>
                             }
-                            @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.Create))
+                            @if (canCreateStudentProfiles)
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" href="/Student/Register">Đăng ký hồ sơ</a>

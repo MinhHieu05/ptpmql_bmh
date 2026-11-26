@@ -1,4 +1,5 @@
 using DemoMVC.Data;
+using DemoMVC.Middleware;
 using DemoMVC.Models;
 using DemoMVC.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -53,25 +54,17 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.Configure<EmailOptions>(
     builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services.AddDataProtection();
 builder.Services.AddTransient<IAppEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<EmailVerificationOtpService>();
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<ActionPermissionCatalog>();
+builder.Services.AddScoped<DynamicActionPermissionService>();
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
-    options.AddPolicy("StudentProfiles.View", policy =>
-        policy.RequireRole("User")
-            .RequireClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View));
-    options.AddPolicy("StudentProfiles.Create", policy =>
-        policy.RequireRole("User")
-            .RequireClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Create));
-    options.AddPolicy("StudentProfiles.Edit", policy =>
-        policy.RequireRole("User")
-            .RequireClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Edit));
-    options.AddPolicy("StudentProfiles.Delete", policy =>
-        policy.RequireRole("User")
-            .RequireClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Delete));
 });
 builder.Services.AddScoped<StudentCodeGenerator>();
 
@@ -90,11 +83,15 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<DynamicActionAuthorizationMiddleware>();
 
 await IdentitySeeder.SeedAsync(
     app.Services,
     app.Configuration,
     app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeeder"));
+await DynamicActionPermissionSeeder.SeedAsync(
+    app.Services,
+    app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("DynamicActionPermissionSeeder"));
 
 app.MapStaticAssets().AllowAnonymous();
 

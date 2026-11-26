@@ -1,8 +1,11 @@
 @model DemoMVC.Models.StudentDeleteViewModel
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
 
 @{
     Layout = "/Views/Student/_StudentLayout.cshtml";
     ViewData["Title"] = "Đã xóa hồ sơ";
+    var canViewProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Profiles");
+    var canCreateProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Register");
 }
 
 <section class="student-portal-form">
@@ -10,11 +13,11 @@
         Hồ sơ <strong>@Model.Name</strong> (@Model.StudentCode) đã được xóa.
     </div>
     <div class="d-flex gap-2">
-        @if (ViewBag.StudentCanView is true)
+        @if (canViewProfiles)
         {
             <a asp-action="Profiles" class="btn btn-primary">Quay lại hồ sơ của tôi</a>
         }
-        @if (ViewBag.StudentCanCreate is true)
+        @if (canCreateProfiles)
         {
             <a asp-action="Register" class="btn btn-outline-primary">Đăng ký hồ sơ mới</a>
         }

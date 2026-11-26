@@ -15,17 +15,23 @@ namespace DemoMVC.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IAppEmailSender _emailSender;
+        private readonly EmailVerificationOtpService _otpService;
+        private readonly DynamicActionPermissionService _permissionService;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
             IAppEmailSender emailSender,
+            EmailVerificationOtpService otpService,
+            DynamicActionPermissionService permissionService,
             ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _emailSender = emailSender;
+            _otpService = otpService;
+            _permissionService = permissionService;
             _logger = logger;
         }
 
@@ -81,7 +87,7 @@ namespace DemoMVC.Controllers
                 return View(input);
             }
 
-            var emailSent = await TrySendConfirmationEmailAsync(user);
+            var emailSent = await TrySendVerificationCodeAsync(user);
             TempData["ConfirmationEmail"] = email;
             TempData["ConfirmationEmailSent"] = emailSent;
             return RedirectToAction(nameof(RegisterConfirmation));
@@ -121,15 +127,29 @@ namespace DemoMVC.Controllers
             var user = await _userManager.FindByEmailAsync(input.Email.Trim());
             if (user != null && !await _userManager.IsEmailConfirmedAsync(user))
             {
-                await TrySendConfirmationEmailAsync(user);
+                try
+                {
+                    var sent = await TrySendVerificationCodeAsync(user);
+                    TempData["VerificationNotice"] = sent
+                        ? "Mã OTP đã được gửi đến email. Nhập mã để gửi yêu cầu xác thực cho Admin."
+                        : "Chưa gửi được email OTP. Hãy kiểm tra cấu hình SMTP hoặc liên hệ Admin.";
+                }
+                catch (EmailVerificationCooldownException)
+                {
+                    TempData["VerificationNotice"] =
+                        "Yêu cầu xác thực vừa bị từ chối. Vui lòng đợi hết thời gian đếm ngược trước khi gửi yêu cầu mới.";
+                }
+                catch (EmailVerificationRequestPendingException)
+                {
+                    TempData["VerificationNotice"] =
+                        "Yêu cầu xác thực của tài khoản đang chờ Admin xử lý.";
+                }
             }
 
-            TempData["ConfirmationEmail"] = input.Email.Trim();
-            TempData["ConfirmationIsResend"] = true;
-            return RedirectToAction(nameof(RegisterConfirmation));
+            return RedirectToAction(nameof(VerifyEmailOtp), new { email = input.Email.Trim() });
         }
 
-        [AllowAnonymous]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> ConfirmEmail(string? userId, string? code)
         {
@@ -148,10 +168,25 @@ namespace DemoMVC.Controllers
                 return View(InvalidConfirmationMessage());
             }
 
+            var requestState = await _otpService.GetRequestStateAsync(user);
+            if (requestState.Status != EmailVerificationRequestStatus.Pending)
+            {
+                return View(new AccountMessageViewModel
+                {
+                    Title = "Yêu cầu chưa được duyệt",
+                    Message = "Email chỉ được xác thực sau khi Admin đồng ý yêu cầu."
+                });
+            }
+
             try
             {
                 var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
                 var result = await _userManager.ConfirmEmailAsync(user, decodedCode);
+                if (result.Succeeded)
+                {
+                    await _otpService.ClearAsync(user);
+                }
+
                 return View(result.Succeeded
                     ? new AccountMessageViewModel
                     {
@@ -165,6 +200,121 @@ namespace DemoMVC.Controllers
             {
                 return View(InvalidConfirmationMessage());
             }
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> VerifyEmailOtp(string? email)
+        {
+            return View(await CreateVerificationViewModelAsync(email));
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyEmailOtp(VerifyEmailOtpViewModel input)
+        {
+            if (!ModelState.IsValid)
+            {
+                await PopulateVerificationStateAsync(input);
+                return View(input);
+            }
+
+            var user = await _userManager.FindByEmailAsync(input.Email.Trim());
+            if (user == null || user.EmailConfirmed ||
+                !await _otpService.IsValidAsync(user, input.Code))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Email hoặc mã OTP không hợp lệ, hoặc mã đã hết hạn. Hãy yêu cầu gửi mã mới.");
+                await PopulateVerificationStateAsync(input);
+                return View(input);
+            }
+
+            var confirmationToken =
+                await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var result = await _userManager.ConfirmEmailAsync(user, confirmationToken);
+            if (!result.Succeeded)
+            {
+                AddIdentityErrors(result);
+                await PopulateVerificationStateAsync(input);
+                return View(input);
+            }
+
+            await _otpService.CompleteVerificationAsync(user);
+            return View("ConfirmEmail", new AccountMessageViewModel
+            {
+                Title = "Xác thực email thành công",
+                Message = "Bạn có thể đăng nhập bằng tài khoản vừa xác thực.",
+                Succeeded = true
+            });
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestAdminEmailVerification(
+            ForgotPasswordViewModel input)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("VerifyEmailOtp", await CreateVerificationViewModelAsync(input.Email));
+            }
+
+            var user = await _userManager.FindByEmailAsync(input.Email.Trim());
+            if (user == null || user.EmailConfirmed ||
+                !await _userManager.IsInRoleAsync(user, "User"))
+            {
+                TempData["VerificationNotice"] =
+                    "Không tìm thấy tài khoản User chưa xác thực. Hãy kiểm tra email hoặc đăng ký tài khoản.";
+                return RedirectToAction(nameof(VerifyEmailOtp), new { email = input.Email.Trim() });
+            }
+
+            try
+            {
+                await _otpService.SubmitRequestAsync(user);
+            }
+            catch (EmailVerificationCooldownException)
+            {
+                TempData["VerificationNotice"] =
+                    "Yêu cầu trước đã bị từ chối. Hãy đợi hết thời gian đếm ngược để gửi lại.";
+            }
+            catch (EmailVerificationRequestPendingException)
+            {
+                TempData["VerificationNotice"] =
+                    "Yêu cầu xác thực của bạn đang chờ Admin xử lý.";
+            }
+
+            return RedirectToAction(nameof(VerifyEmailOtp), new { email = user.Email });
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> VerificationStatus(string? email)
+        {
+            Response.Headers.CacheControl = "no-store";
+            var user = string.IsNullOrWhiteSpace(email)
+                ? null
+                : await _userManager.FindByEmailAsync(email.Trim());
+            if (user == null)
+            {
+                return Json(new { status = "available", cooldownUntil = (DateTimeOffset?)null });
+            }
+            if (user.EmailConfirmed)
+            {
+                return Json(new { status = "confirmed", cooldownUntil = (DateTimeOffset?)null });
+            }
+
+            var state = await _otpService.GetRequestStateAsync(user);
+            var status = state.Status switch
+            {
+                EmailVerificationRequestStatus.Pending => "pending",
+                EmailVerificationRequestStatus.Rejected when state.CooldownUntil.HasValue =>
+                    "cooldown",
+                EmailVerificationRequestStatus.Rejected => "available",
+                _ => "available"
+            };
+            return Json(new { status, cooldownUntil = state.CooldownUntil });
         }
 
         [AllowAnonymous]
@@ -210,17 +360,15 @@ namespace DemoMVC.Controllers
                     return Redirect("/Admin");
                 }
 
-                var permissions = await _userManager.GetClaimsAsync(user!);
-                if (permissions.Any(claim =>
-                        claim.Type == StudentProfilePermissions.ClaimType &&
-                        claim.Value == StudentProfilePermissions.View))
+                var roles = await _userManager.GetRolesAsync(user!);
+                if (await _permissionService.IsAllowedForRolesAsync(
+                        roles, null, "Student", "Profiles", HttpContext.RequestAborted))
                 {
                     return RedirectToAction("Profiles", "Student");
                 }
 
-                if (permissions.Any(claim =>
-                        claim.Type == StudentProfilePermissions.ClaimType &&
-                        claim.Value == StudentProfilePermissions.Create))
+                if (await _permissionService.IsAllowedForRolesAsync(
+                        roles, null, "Student", "Register", HttpContext.RequestAborted))
                 {
                     return RedirectToAction("Register", "Student");
                 }
@@ -239,7 +387,7 @@ namespace DemoMVC.Controllers
             {
                 ModelState.AddModelError(
                     string.Empty,
-                    "Email chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc gửi lại email xác thực.");
+                    "Email chưa được Admin xác thực. Hãy gửi yêu cầu xác thực và chờ Admin duyệt.");
             }
             else
             {
@@ -560,29 +708,17 @@ namespace DemoMVC.Controllers
             return View();
         }
 
-        private async Task<bool> TrySendConfirmationEmailAsync(ApplicationUser user)
+        private async Task<bool> TrySendVerificationCodeAsync(ApplicationUser user)
         {
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var confirmationUrl = Url.ActionLink(
-                nameof(ConfirmEmail),
-                "Account",
-                new
-                {
-                    userId = user.Id,
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code))
-                });
-
-            if (confirmationUrl == null)
-            {
-                throw new InvalidOperationException("Could not generate the email confirmation URL.");
-            }
+            var otp = await _otpService.CreateAsync(user);
 
             try
             {
                 await _emailSender.SendEmailAsync(
                     user.Email!,
-                    "Xác thực tài khoản DemoMVC",
-                    $"<p>Để xác thực tài khoản, hãy <a href=\"{HtmlEncoder.Default.Encode(confirmationUrl)}\">mở liên kết này</a>.</p>");
+                    "Mã OTP xác thực tài khoản DemoMVC",
+                    $"<p>Mã OTP xác thực tài khoản của bạn là: <strong>{otp}</strong>.</p>" +
+                    "<p>Mã có hiệu lực trong 10 phút và chỉ sử dụng được một lần.</p>");
                 return true;
             }
             catch (Exception exception)
@@ -590,6 +726,46 @@ namespace DemoMVC.Controllers
                 _logger.LogError(exception, "Could not send an email confirmation to user {UserId}.", user.Id);
                 return false;
             }
+        }
+
+        private async Task<VerifyEmailOtpViewModel> CreateVerificationViewModelAsync(string? email)
+        {
+            var input = new VerifyEmailOtpViewModel { Email = email ?? string.Empty };
+            await PopulateVerificationStateAsync(input);
+            return input;
+        }
+
+        private async Task PopulateVerificationStateAsync(VerifyEmailOtpViewModel input)
+        {
+            input.RequestStatus = string.Empty;
+            input.CooldownUntil = null;
+            if (string.IsNullOrWhiteSpace(input.Email))
+            {
+                return;
+            }
+
+            var user = await _userManager.FindByEmailAsync(input.Email.Trim());
+            if (user == null)
+            {
+                return;
+            }
+            if (user.EmailConfirmed)
+            {
+                input.RequestStatus = "confirmed";
+                return;
+            }
+
+            var state = await _otpService.GetRequestStateAsync(user);
+            input.RequestStatus = state.Status switch
+            {
+                EmailVerificationRequestStatus.Pending => "pending",
+                EmailVerificationRequestStatus.Rejected when state.CooldownUntil.HasValue =>
+                    "cooldown",
+                EmailVerificationRequestStatus.Rejected => "available",
+                _ => "available"
+            };
+            input.CooldownUntil = state.CooldownUntil;
+            input.OtpExpiresAt = (await _otpService.GetActiveAsync(user))?.ExpiresAt;
         }
 
         private static AccountMessageViewModel InvalidConfirmationMessage()

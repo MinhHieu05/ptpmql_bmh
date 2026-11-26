@@ -16,23 +16,25 @@
         else if (Model.EmailSent)
         {
             <div class="alert alert-success" role="status">
-                Email xác thực đã được gửi. Hãy mở email và bấm liên kết để kích hoạt tài khoản trước khi đăng nhập.
+                Mã OTP đã được gửi. Bạn có thể xác thực ngay bằng OTP hoặc gửi yêu cầu để Admin duyệt.
             </div>
         }
         else
         {
             <div class="alert alert-warning" role="status">
-                Tài khoản đã được tạo nhưng chưa gửi được email xác thực. Kiểm tra cấu hình SMTP hoặc liên hệ quản trị viên.
+                Tài khoản đã được tạo nhưng chưa gửi được email OTP. Hãy kiểm tra cấu hình SMTP hoặc liên hệ Admin.
             </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(Model.Email))
         {
             <p class="text-secondary">Địa chỉ email: @Model.Email</p>
+            <a asp-action="VerifyEmailOtp" asp-route-email="@Model.Email"
+               class="btn btn-primary mb-3">Chọn cách xác thực email</a>
             <form asp-action="ResendConfirmation" method="post" class="mb-3">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Email" value="@Model.Email" />
-                <button type="submit" class="btn btn-outline-primary">Gửi lại email xác thực</button>
+                <button type="submit" class="btn btn-outline-primary">Gửi lại mã OTP</button>
             </form>
         }
         <a asp-action="Login">Về trang đăng nhập</a>

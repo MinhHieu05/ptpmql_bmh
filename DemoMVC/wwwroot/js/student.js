@@ -39,6 +39,7 @@
         sortBy: "studentCode",
         descending: false
     };
+    let isCreatingStudent = false;
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
     function studentUrl(code) {
@@ -377,11 +378,13 @@
         event.preventDefault();
         clearFormErrors(createForm);
 
-        if (!createForm.reportValidity()) {
+        if (isCreatingStudent || !createForm.reportValidity()) {
             return;
         }
 
+        isCreatingStudent = true;
         setFormBusyAndError(createForm, true);
+        let shouldReloadStudents = false;
 
         try {
             const payload = formDataToObject(createForm);
@@ -392,11 +395,16 @@
             createModal.hide();
             showNotice(`Đã thêm sinh viên thành công. Mã sinh viên: ${createdStudent.studentCode}.`);
             state.page = 1;
-            await loadStudents();
+            shouldReloadStudents = true;
         } catch (error) {
             setFormBusyAndError(createForm, false, error);
         } finally {
+            isCreatingStudent = false;
             setFormBusy(createForm, false, "Thêm sinh viên");
+        }
+
+        if (shouldReloadStudents) {
+            await loadStudents();
         }
     });
 
@@ -505,9 +513,15 @@
         }
     });
 
-    document.querySelector("#create-student-modal").addEventListener("show.bs.modal", () => {
+    document.querySelector("#create-student-modal").addEventListener("show.bs.modal", event => {
+        if (isCreatingStudent) {
+            event.preventDefault();
+            return;
+        }
+
         createForm.reset();
         clearFormErrors(createForm);
+        setBusy(createForm, false, "Thêm sinh viên");
     });
 
     loadStudents();

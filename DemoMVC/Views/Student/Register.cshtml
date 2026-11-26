@@ -1,8 +1,10 @@
 @model DemoMVC.Models.StudentPortalCreateViewModel
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
 
 @{
     Layout = "/Views/Student/_StudentLayout.cshtml";
     ViewData["Title"] = "Đăng ký hồ sơ sinh viên";
+    var canViewProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Profiles");
 }
 
 <section class="student-portal-form">
@@ -63,7 +65,7 @@
             </div>
         </div>
         <div class="card-footer bg-white p-3 d-flex justify-content-end gap-2">
-            @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+            @if (canViewProfiles)
             {
                 <a asp-action="Profiles" class="btn btn-outline-secondary">Hủy</a>
             }

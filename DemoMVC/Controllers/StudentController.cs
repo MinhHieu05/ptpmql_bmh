@@ -9,41 +9,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DemoMVC.Controllers
 {
-    [Authorize(Roles = "User")]
+    [Authorize]
     [Route("[controller]")]
     public sealed class StudentController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly StudentCodeGenerator _codeGenerator;
+        private readonly DynamicActionPermissionService _permissionService;
         private readonly ILogger<StudentController> _logger;
 
         public StudentController(
             ApplicationDbContext context,
             StudentCodeGenerator codeGenerator,
+            DynamicActionPermissionService permissionService,
             ILogger<StudentController> logger)
         {
             _context = context;
             _codeGenerator = codeGenerator;
+            _permissionService = permissionService;
             _logger = logger;
         }
 
         [HttpGet("")]
         public IActionResult Index()
         {
-            if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View))
-            {
-                return RedirectToAction(nameof(Profiles));
-            }
-
-            if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Create))
-            {
-                return RedirectToAction(nameof(Register));
-            }
-
-            return RedirectToAction("AccessDenied", "Account");
+            return RedirectToAction(nameof(Profiles));
         }
 
-        [Authorize(Policy = "StudentProfiles.View")]
+        [Authorize]
         [HttpGet("Profiles")]
         public async Task<IActionResult> Profiles()
         {
@@ -59,7 +52,7 @@ namespace DemoMVC.Controllers
             return View("Index", students);
         }
 
-        [Authorize(Policy = "StudentProfiles.Create")]
+        [Authorize]
         [HttpGet("Register")]
         public async Task<IActionResult> Register()
         {
@@ -70,7 +63,7 @@ namespace DemoMVC.Controllers
             });
         }
 
-        [Authorize(Policy = "StudentProfiles.Create")]
+        [Authorize]
         [HttpPost("Register")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(StudentPortalCreateViewModel input)
@@ -113,7 +106,8 @@ namespace DemoMVC.Controllers
 
                 var message =
                     $"Đã gửi hồ sơ thành công. Mã sinh viên: {student.StudentCode}. Hồ sơ đang chờ Admin duyệt.";
-                if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View))
+                if (await _permissionService.IsAllowedAsync(
+                        User, null, "Student", "Profiles", HttpContext.RequestAborted))
                 {
                     TempData["SuccessMessage"] = message;
                     return RedirectToAction(nameof(Profile), new { id = student.StudentCode });
@@ -145,7 +139,7 @@ namespace DemoMVC.Controllers
             }
         }
 
-        [Authorize(Policy = "StudentProfiles.View")]
+        [Authorize]
         [HttpGet("Profile/{id?}")]
         public async Task<IActionResult> Profile(string? id)
         {
@@ -168,7 +162,7 @@ namespace DemoMVC.Controllers
             return View(student);
         }
 
-        [Authorize(Policy = "StudentProfiles.Edit")]
+        [Authorize]
         [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(string id)
         {
@@ -201,7 +195,7 @@ namespace DemoMVC.Controllers
             return View(input);
         }
 
-        [Authorize(Policy = "StudentProfiles.Edit")]
+        [Authorize]
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(string id, StudentPortalEditViewModel input)
@@ -265,7 +259,8 @@ namespace DemoMVC.Controllers
 
             TempData["SuccessMessage"] =
                 "Hồ sơ đã được cập nhật và chuyển về trạng thái Chờ Admin duyệt.";
-            if (User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View))
+            if (await _permissionService.IsAllowedAsync(
+                    User, null, "Student", "Profiles", HttpContext.RequestAborted))
             {
                 return RedirectToAction(nameof(Profile), new { id });
             }
@@ -273,7 +268,7 @@ namespace DemoMVC.Controllers
             return RedirectToAction(nameof(Edit), new { id });
         }
 
-        [Authorize(Policy = "StudentProfiles.Delete")]
+        [Authorize]
         [HttpGet("Delete/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -290,7 +285,7 @@ namespace DemoMVC.Controllers
             return student == null ? NotFound() : View(student);
         }
 
-        [Authorize(Policy = "StudentProfiles.Delete")]
+        [Authorize]
         [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
@@ -310,10 +305,6 @@ namespace DemoMVC.Controllers
             _context.Students.Remove(student);
             await _context.SaveChangesAsync();
 
-            ViewBag.StudentCanCreate =
-                User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Create);
-            ViewBag.StudentCanView =
-                User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.View);
             return View("DeleteCompleted", deleted);
         }
 

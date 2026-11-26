@@ -24,7 +24,11 @@
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
             <p><a asp-action="ForgotPassword">Quên mật khẩu?</a></p>
-            <p><a asp-action="ResendConfirmation">Gửi lại email xác thực</a></p>
+            <p>
+                <a asp-action="VerifyEmailOtp">Yêu cầu xác thực email</a>
+                <span class="text-secondary">·</span>
+                <a asp-action="ResendConfirmation">Gửi lại mã OTP</a>
+            </p>
             <div class="form-check mb-3">
                 <input asp-for="RememberMe" class="form-check-input" />
                 <label asp-for="RememberMe" class="form-check-label"></label>

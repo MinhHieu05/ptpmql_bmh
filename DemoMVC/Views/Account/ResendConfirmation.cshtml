@@ -1,13 +1,13 @@
 @model DemoMVC.Models.ForgotPasswordViewModel
 
 @{
-    ViewData["Title"] = "Gửi lại email xác thực";
+    ViewData["Title"] = "Gửi lại mã OTP";
 }
 
 <div class="row justify-content-center">
     <div class="col-md-7 col-lg-5">
-        <h1 class="h3 mb-3">Gửi lại email xác thực</h1>
-        <p class="text-secondary">Nhập email đã đăng ký. Nếu tài khoản chưa xác thực, hướng dẫn sẽ được gửi lại.</p>
+        <h1 class="h3 mb-3">Gửi lại mã OTP xác thực</h1>
+        <p class="text-secondary">Nhập email đã đăng ký. Nếu tài khoản chưa xác thực, mã OTP sẽ được gửi lại.</p>
         <form asp-action="ResendConfirmation" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
             <div class="mb-3">
@@ -15,7 +15,7 @@
                 <input asp-for="Email" class="form-control" autocomplete="email" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
-            <button type="submit" class="btn btn-primary">Gửi lại email</button>
+            <button type="submit" class="btn btn-primary">Gửi lại mã OTP</button>
             <a asp-action="Login" class="btn btn-link">Quay lại đăng nhập</a>
         </form>
     </div>

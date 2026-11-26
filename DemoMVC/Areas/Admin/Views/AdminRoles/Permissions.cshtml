@@ -1,0 +1,64 @@
+@model DemoMVC.Models.RolePermissionsViewModel
+
+@{
+    Layout = "/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = $"Quyền Role {Model.RoleName}";
+}
+
+<section>
+    <p class="admin-eyebrow mb-2">QUẢN TRỊ HỆ THỐNG</p>
+    <a href="/Admin/Roles" class="text-decoration-none">&larr; Danh sách Role</a>
+    <h1 class="h2 mt-2 mb-2">Quyền của Role @Model.RoleName</h1>
+    <p class="text-secondary mb-4">
+        Chọn quyền cho từng Action. Thay đổi có hiệu lực ngay ở request tiếp theo.
+        Action công khai được đánh dấu và không bị giới hạn bởi Role.
+    </p>
+
+    @if (TempData["AdminRolesMessage"] is string message)
+    {
+        <div class="alert alert-success" role="status">@message</div>
+    }
+
+    <form method="post" action="/Admin/Roles/@Model.RoleId/permissions">
+        @Html.AntiForgeryToken()
+        <div class="d-flex gap-2 mb-3">
+            <button type="submit" class="btn btn-primary">Lưu quyền</button>
+            <a href="/Admin/Roles" class="btn btn-outline-secondary">Hủy</a>
+        </div>
+        <div class="table-responsive bg-white rounded shadow-sm">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Area</th>
+                        <th>Controller</th>
+                        <th>Action</th>
+                        <th class="text-center">Cho phép</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var action in Model.Actions)
+                    {
+                        <tr>
+                            <td>@(string.IsNullOrEmpty(action.Area) ? "—" : action.Area)</td>
+                            <td>@action.Controller</td>
+                            <td>@action.Action</td>
+                            <td class="text-center">
+                                @if (action.IsAnonymous)
+                                {
+                                    <span class="badge text-bg-light">Công khai</span>
+                                }
+                                else
+                                {
+                                    <input type="checkbox" class="form-check-input"
+                                           name="allowedActionKeys" value="@action.Key"
+                                           checked="@action.IsAllowed"
+                                           aria-label="Cho phép @action.Controller.@action.Action" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </form>
+</section>

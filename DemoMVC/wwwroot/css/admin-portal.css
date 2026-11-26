@@ -99,6 +99,34 @@
     background: #fff;
 }
 
+.admin-notification-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    color: #34425a;
+    font-size: .9rem;
+    text-decoration: none;
+}
+
+.admin-notification-link:hover,
+.admin-notification-link:focus-visible {
+    color: #3156a6;
+}
+
+.admin-notification-count {
+    display: inline-grid;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    place-items: center;
+    padding: 0 .25rem;
+    border-radius: 999px;
+    background: #dc3545;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
 .admin-content {
     padding: 2rem;
 }

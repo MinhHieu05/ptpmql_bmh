@@ -1,8 +1,10 @@
 @model DemoMVC.Models.StudentDeleteViewModel
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
 
 @{
     Layout = "/Views/Student/_StudentLayout.cshtml";
     ViewData["Title"] = "Xóa hồ sơ sinh viên";
+    var canViewProfile = await PermissionService.IsAllowedAsync(User, null, "Student", "Profile");
 }
 
 <section class="student-portal-form">
@@ -14,7 +16,7 @@
     </div>
     <form asp-action="Delete" asp-route-id="@Model.StudentCode" method="post" class="d-flex gap-2">
         <button type="submit" class="btn btn-danger">Xóa hồ sơ</button>
-        @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+        @if (canViewProfile)
         {
             <a asp-action="Profile" asp-route-id="@Model.StudentCode"
                class="btn btn-outline-secondary">Hủy</a>

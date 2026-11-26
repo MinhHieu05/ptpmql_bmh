@@ -70,8 +70,12 @@ Buổi 13: offline
 - Khởi tạo tài khoản mặc định
 - Cấu hình gửi email: Xác thực tài khoản, Quên mật khẩu,...
 
-## Cổng Admin và cổng sinh viên
+Buổi 14: offline
+- Xây dựng chức năng CRUD Role
+- Xây dựng chức năng gán Role cho người dùng
+- Xây dựng chức năng phân quyền động cho Role áp dụng cho từng Action của tất cả các Controller
 
+## Cổng Admin và cổng sinh viên
 - Admin đăng nhập tại `/Account/Login` và quản lý hồ sơ ở `/Admin/Students`.
 - Tài khoản User đăng ký/đăng nhập để tạo nhiều hồ sơ tại `/Student/Register`; User chỉ xem được hồ sơ do chính mình tạo.
 - Hồ sơ User mới tạo ở trạng thái **Chờ duyệt**. Admin lọc theo trạng thái và chọn **Duyệt** để đưa hồ sơ lên danh sách công khai `/PublicStudents`.
@@ -126,18 +130,26 @@ Thay tất cả giá trị mẫu bằng thông tin của bạn và không commit
 
 ### Luồng tài khoản và quyền truy cập
 
-- Đăng ký tại `/Account/Register`: chỉ được cấp role `User`, không có trường chọn Admin. Tài khoản cần xác thực email qua liên kết Identity trước khi đăng nhập.
-- Đăng nhập tại `/Account/Login`; tài khoản chưa xác thực, nhập sai mật khẩu và tài khoản bị khóa được xử lý riêng.
-- Quên mật khẩu tại `/Account/ForgotPassword`; liên kết đặt lại và xác thực email dùng token Identity.
+- Đăng ký tại `/Account/Register`: chỉ được cấp role `User`, không có trường chọn Admin. Sau đăng ký, User có thể chọn một trong hai cách xác thực tại `/Account/VerifyEmailOtp`:
+  1. Nhập OTP được gửi tới email; mã hợp lệ xác thực email ngay.
+  2. Gửi yêu cầu tới hộp thư **Yêu cầu xác thực email** của Admin; chỉ sau khi Admin đồng ý mới được đăng nhập.
+- Hai lựa chọn cũng có thể mở từ liên kết xác thực trên trang `/Account/Login`. Yêu cầu Admin không bắt buộc phải có OTP; Admin duyệt theo email đăng ký.
+- Nếu Admin từ chối, User đợi một phút (giao diện có đếm ngược) rồi mới có thể gửi yêu cầu Admin mới. OTP email vẫn là lựa chọn xác thực riêng.
+- Mã OTP có hiệu lực 10 phút, lưu dạng được bảo vệ và bị vô hiệu sau 5 lần nhập sai. OTP chỉ được hiển thị trong hộp thư Admin đối với tài khoản đang có yêu cầu duyệt.
+- Đăng nhập tại `/Account/Login`; tài khoản chưa được xác thực, nhập sai mật khẩu và tài khoản bị khóa được xử lý riêng.
+- Quên mật khẩu tại `/Account/ForgotPassword`; liên kết đặt lại mật khẩu dùng token Identity.
 - Quản lý email/số điện thoại và đổi mật khẩu tại `/Account/Manage`.
-- Admin quản lý vai trò và khóa/mở khóa tài khoản tại `/Admin/Users`. Không thể tự đổi role/khóa tài khoản đang đăng nhập hoặc hạ quyền Admin cuối cùng.
-- Tại mục **Phân quyền quản lý tài khoản** trên thanh điều hướng Admin (hoặc `/Admin/Users`), Admin có thể cấp riêng quyền Xem/Thêm/Sửa/Xóa hồ sơ sinh viên cho từng User. Quyền lưu dưới dạng Identity User Claims, không cần migration; tài khoản User mới không có quyền hồ sơ cho đến khi Admin cấp.
-- User chỉ xem, tạo, sửa hoặc xóa hồ sơ do chính tài khoản đó tạo. Khi User sửa hồ sơ đã duyệt, hồ sơ trở về trạng thái **Chờ Admin duyệt**. Khi Admin đổi quyền hoặc vai trò, phiên đăng nhập cũ bị thu hồi ở request tiếp theo; User đăng nhập lại để nhận quyền mới.
-- Mặc định các trang yêu cầu đăng nhập. Trang chủ và danh sách sinh viên công khai được phép truy cập ẩn danh; Student portal chỉ role User; khu vực Admin và CRUD nhân viên chỉ role Admin.
+- Admin quản lý tài khoản và gán nhiều Role tại `/Admin/Users`; quyền hiệu lực là hợp quyền của các Role được gán. Không thể tự đổi Role/khóa tài khoản đang đăng nhập hoặc hạ quyền Admin cuối cùng.
+- Admin tạo/đổi tên/xóa Role và phân quyền từng Action tại `/Admin/Roles`. Hai Role `Admin` và `User` luôn được tạo mặc định và không thể đổi tên hoặc xóa. Role mới mặc định không có quyền; trước khi xóa Role cần thu hồi Role đó khỏi mọi tài khoản.
+- Hệ thống tự phát hiện Controller/Action MVC khi khởi động và lưu quyền theo Role, Area, Controller, Action trong SQLite. Action mới được thêm quyền mặc định khi khởi động lại ứng dụng: Admin được phép tất cả; User được phép Create/Read/Update và không được Delete; Role khác bị từ chối đến khi Admin cấu hình. Action thuộc Area Admin mặc định chỉ Admin được phép.
+- Mọi request tới action được bảo vệ đều kiểm tra quyền ở máy chủ, kể cả truy cập URL trực tiếp. Quyền truy vấn trực tiếp từ SQLite nên thay đổi có hiệu lực ở request kế tiếp. Người chưa đăng nhập được chuyển tới trang đăng nhập; người đăng nhập thiếu quyền được chuyển tới trang từ chối truy cập.
+- Mục **Yêu cầu xác thực email** và chuông thông báo trên thanh Admin chỉ cho role Admin truy cập; Admin đồng ý/từ chối yêu cầu chờ tại `/Admin/EmailVerification`.
+- User chỉ xem, tạo, sửa hoặc xóa hồ sơ do chính tài khoản đó tạo. Khi User sửa hồ sơ đã duyệt, hồ sơ trở về trạng thái **Chờ Admin duyệt**. Thay đổi Role của tài khoản thu hồi phiên đăng nhập cũ; thay đổi quyền Action có hiệu lực ở request kế tiếp.
+- Mặc định các trang yêu cầu đăng nhập. Trang chủ và danh sách sinh viên công khai được phép truy cập ẩn danh; các action còn lại được quyết định theo quyền Role, không cần sửa code khi tạo Role hoặc thay đổi quyền.
 
 ### Migration và cập nhật database
 
-Các migration Identity hiện có đã được áp dụng trong database của dự án, gồm các bảng `AspNetUsers`, `AspNetRoles` và liên kết trạng thái hồ sơ sinh viên. Các chức năng email/profile mới sử dụng trường Identity đã có nên **không tạo migration mới và không tự chạy migration khi ứng dụng khởi động**.
+Migration Identity mới tạo bảng `RoleActionPermissions` để lưu quyền theo Role/Action. Sao lưu database trước khi cập nhật; ứng dụng không tự chạy migration khi khởi động và sẽ báo lỗi rõ ràng nếu bảng quyền chưa được cài đặt.
 
 Trước khi cập nhật một bản database khác, sao lưu `DemoMVC/App.db`, sau đó kiểm tra migration:
 
@@ -145,10 +157,12 @@ Trước khi cập nhật một bản database khác, sao lưu `DemoMVC/App.db`,
 dotnet ef migrations list --context ApplicationIdentityDbContext --project DemoMVC/DemoMVC.csproj --startup-project DemoMVC/DemoMVC.csproj
 ```
 
-Chỉ khi xác nhận bản database cần cập nhật, chạy các migration Identity hiện có:
+Chỉ khi xác nhận bản database cần cập nhật, chạy migration Identity:
 
 ```bash
 dotnet ef database update --context ApplicationIdentityDbContext --project DemoMVC/DemoMVC.csproj --startup-project DemoMVC/DemoMVC.csproj
 ```
+
+Sau khi cập nhật, khởi động ứng dụng để tự tạo các quyền mặc định và đồng bộ Action mới được phát hiện.
 
 Không xóa `App.db` và không áp dụng migration lên một database khác ngoài ý muốn. Các migration Identity có một số bước thêm cột `UserId`/`IsApproved` vào bảng Students nên cần sao lưu trước nếu database chưa có các migration đó.

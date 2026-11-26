@@ -11,7 +11,7 @@ using DemoMVC.Models;
 
 namespace DemoMVC.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class NhanvienController : Controller
     {
         private readonly ApplicationDbContext _context;

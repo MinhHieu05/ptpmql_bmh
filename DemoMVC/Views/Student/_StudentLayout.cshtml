@@ -1,3 +1,10 @@
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
+
+@{
+    var canViewProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Profiles");
+    var canRegister = await PermissionService.IsAllowedAsync(User, null, "Student", "Register");
+}
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -11,13 +18,13 @@
 <body class="student-portal-body">
     <nav class="navbar navbar-expand-lg student-navbar">
         <div class="container">
-            @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+            @if (canViewProfiles)
             {
                 <a class="navbar-brand fw-semibold" asp-area="" asp-controller="Student" asp-action="Profiles">
                     DemoMVC <span class="student-nav-label">Cổng sinh viên</span>
                 </a>
             }
-            else if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.Create))
+            else if (canRegister)
             {
                 <a class="navbar-brand fw-semibold" asp-area="" asp-controller="Student" asp-action="Register">
                     DemoMVC <span class="student-nav-label">Cổng sinh viên</span>
@@ -36,11 +43,11 @@
             </button>
             <div class="collapse navbar-collapse" id="student-navigation">
                 <div class="navbar-nav me-auto">
-                    @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+                    @if (canViewProfiles)
                     {
                         <a class="nav-link" asp-area="" asp-controller="Student" asp-action="Profiles">Hồ sơ của tôi</a>
                     }
-                    @if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.Create))
+                    @if (canRegister)
                     {
                         <a class="nav-link" asp-area="" asp-controller="Student" asp-action="Register">Đăng ký hồ sơ</a>
                     }

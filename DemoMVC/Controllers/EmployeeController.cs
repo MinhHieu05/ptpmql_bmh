@@ -6,7 +6,7 @@ using DemoMVC.Data;
 
 namespace DemoMVC.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class EmployeeController : Controller
     {
         private readonly ApplicationDbContext _context;

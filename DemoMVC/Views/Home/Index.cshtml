@@ -1,5 +1,10 @@
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
+
 @{
     ViewData["Title"] = "Trang chủ";
+    var canAccessAdmin = await PermissionService.IsAllowedAsync(User, "Admin", "Admin", "Index");
+    var canViewProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Profiles");
+    var canCreateProfiles = await PermissionService.IsAllowedAsync(User, null, "Student", "Register");
 }
 
 <div class="public-home">
@@ -14,15 +19,15 @@
             <div class="home-actions">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    if (User.IsInRole("Admin"))
+                    if (canAccessAdmin)
                     {
                         <a class="btn home-btn-primary" href="/Admin">Vào trang quản trị <span aria-hidden="true">→</span></a>
                     }
-                    else if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.View))
+                    else if (canViewProfiles)
                     {
                         <a class="btn home-btn-primary" href="/Student/Profiles">Hồ sơ của tôi <span aria-hidden="true">→</span></a>
                     }
-                    else if (User.HasClaim(DemoMVC.Services.StudentProfilePermissions.ClaimType, DemoMVC.Services.StudentProfilePermissions.Create))
+                    else if (canCreateProfiles)
                     {
                         <a class="btn home-btn-primary" href="/Student/Register">Đăng ký hồ sơ <span aria-hidden="true">→</span></a>
                     }

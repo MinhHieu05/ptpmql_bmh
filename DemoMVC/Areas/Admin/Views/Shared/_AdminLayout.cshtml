@@ -19,6 +19,8 @@
                 <a href="/Admin">Tổng quan</a>
                 <a href="/Admin/Students">Quản lý sinh viên</a>
                 <a href="/Admin/Users">Phân quyền quản lý tài khoản</a>
+                <a href="/Admin/Roles">Quản lý Role và quyền Action</a>
+                <a href="/Admin/EmailVerification">Yêu cầu xác thực email</a>
                 <a href="/PublicStudents">Danh sách công khai</a>
             </nav>
             <div class="admin-sidebar-footer">
@@ -33,7 +35,10 @@
         <main class="admin-main">
             <header class="admin-topbar">
                 <span>Khu vực quản trị</span>
-                <span class="badge text-bg-light">Admin</span>
+                <div class="d-flex align-items-center gap-3">
+                    <vc:email-verification-notification />
+                    <span class="badge text-bg-light">Admin</span>
+                </div>
             </header>
             <div class="admin-content">@RenderBody()</div>
         </main>

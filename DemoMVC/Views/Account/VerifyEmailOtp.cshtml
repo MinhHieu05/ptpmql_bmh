@@ -1,0 +1,177 @@
+@model DemoMVC.Models.VerifyEmailOtpViewModel
+
+@{
+    ViewData["Title"] = "Yêu cầu xác thực email";
+    var pending = Model.RequestStatus == "pending";
+    var cooldown = Model.RequestStatus == "cooldown";
+    var confirmed = Model.RequestStatus == "confirmed";
+    var hasActiveOtp = Model.OtpExpiresAt > DateTimeOffset.UtcNow;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-5">
+        <h1 class="h3 mb-3">Xác thực email</h1>
+        <p class="text-secondary">
+            Chọn một trong hai cách: nhập OTP để xác thực ngay, hoặc gửi yêu cầu để Admin duyệt.
+        </p>
+
+        @if (TempData["VerificationNotice"] is string notice)
+        {
+            <div class="alert alert-info" role="status">@notice</div>
+        }
+        <div id="verification-state" class="alert @(pending ? "alert-info" : cooldown ? "alert-warning" : confirmed ? "alert-success" : "d-none")"
+             role="status"
+             data-status="@Model.RequestStatus"
+             data-cooldown-until="@Model.CooldownUntil?.ToString("O")"
+             data-email="@Model.Email"
+             data-status-url="@Url.Action("VerificationStatus", "Account")">
+            @if (pending)
+            {
+                <span>Yêu cầu đã được gửi, đang chờ Admin đồng ý hoặc từ chối.</span>
+            }
+            else if (cooldown)
+            {
+                <span>Yêu cầu trước đã bị từ chối. Bạn có thể yêu cầu lại sau </span>
+                <strong id="verification-countdown"></strong>
+                <span>.</span>
+            }
+            else if (confirmed)
+            {
+                <span>Admin đã đồng ý. Email đã được xác thực, bạn có thể đăng nhập.</span>
+            }
+            <span id="verification-poll-error" class="d-none">
+                Không thể cập nhật trạng thái yêu cầu. Hãy tải lại trang sau.
+            </span>
+        </div>
+
+        @if (confirmed)
+        {
+            <a asp-action="Login" class="btn btn-success">Đăng nhập</a>
+        }
+        else
+        {
+            <section class="mb-4">
+                <h2 class="h5">Cách 1: Xác thực bằng OTP</h2>
+                <p class="text-secondary">Nhập mã trong email của bạn. Mã đúng sẽ xác thực email ngay.</p>
+                @if (hasActiveOtp)
+                {
+                    <form asp-action="VerifyEmailOtp" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input asp-for="Email" type="hidden" />
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label"></label>
+                            <input asp-for="Code" class="form-control" inputmode="numeric"
+                                   autocomplete="one-time-code" maxlength="6" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Xác thực bằng OTP</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="ResendConfirmation" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Email" value="@Model.Email" />
+                        <button type="submit" class="btn btn-outline-primary"
+                                disabled="@(cooldown || pending)">
+                            Gửi mã OTP đến email
+                        </button>
+                    </form>
+                }
+            </section>
+
+            <section>
+                <h2 class="h5">Cách 2: Nhờ Admin xác thực</h2>
+                <p class="text-secondary">Gửi email yêu cầu đến hộp thư xác thực của Admin.</p>
+                @if (!pending)
+                {
+                    <form asp-action="RequestAdminEmailVerification" method="post">
+                        @Html.AntiForgeryToken()
+                        @if (!hasActiveOtp)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" autocomplete="email" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" name="Email" value="@Model.Email" />
+                        }
+                        <button id="request-again-button" type="submit"
+                                class="btn btn-outline-secondary" disabled="@cooldown">
+                            Gửi yêu cầu Admin xác thực
+                        </button>
+                    </form>
+                }
+            </section>
+
+            @if (hasActiveOtp)
+            {
+                <form asp-action="ResendConfirmation" method="post" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Email" value="@Model.Email" />
+                    <button type="submit" class="btn btn-link">Gửi lại mã OTP</button>
+                </form>
+            }
+        }
+
+        <p class="mt-3"><a asp-action="Login">Về trang đăng nhập</a></p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const state = document.getElementById("verification-state");
+            if (!state) return;
+
+            const countdown = document.getElementById("verification-countdown");
+            const button = document.getElementById("request-again-button");
+            const emailInput = document.getElementById("Email");
+            const expiresAt = Date.parse(state.dataset.cooldownUntil || "");
+            const renderCountdown = () => {
+                if (!countdown || !Number.isFinite(expiresAt)) return;
+                const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+                const minutes = Math.floor(remaining / 60).toString().padStart(2, "0");
+                const seconds = (remaining % 60).toString().padStart(2, "0");
+                countdown.textContent = `${minutes}:${seconds}`;
+                if (button) {
+                    button.disabled = remaining > 0;
+                    button.textContent = remaining > 0
+                        ? `Yêu cầu lại sau ${minutes}:${seconds}`
+                        : "Gửi mã OTP để yêu cầu xác thực";
+                }
+            };
+            renderCountdown();
+            window.setInterval(renderCountdown, 1000);
+
+            const pollError = document.getElementById("verification-poll-error");
+            const email = emailInput?.value || state.dataset.email;
+            if (!email || !state.dataset.statusUrl) return;
+            window.setInterval(async () => {
+                try {
+                    const url = new URL(state.dataset.statusUrl, window.location.origin);
+                    url.searchParams.set("email", email);
+                    const response = await fetch(url, { cache: "no-store" });
+                    if (!response.ok) {
+                        throw new Error("Status refresh failed.");
+                    }
+                    const current = await response.json();
+                    if (pollError) pollError.classList.add("d-none");
+                    const previous = state.dataset.status || "available";
+                    if (current.status !== previous &&
+                        !(previous === "cooldown" && current.status === "available")) {
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    if (pollError) pollError.classList.remove("d-none");
+                    console.error("Could not refresh email verification status.", error);
+                }
+            }, 5000);
+        })();
+    </script>
+}

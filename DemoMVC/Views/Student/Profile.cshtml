@@ -1,11 +1,11 @@
 @model DemoMVC.Models.Student
-@using DemoMVC.Services
+@inject DemoMVC.Services.DynamicActionPermissionService PermissionService
 
 @{
     Layout = "/Views/Student/_StudentLayout.cshtml";
     ViewData["Title"] = "Chi tiết hồ sơ";
-    var canEdit = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Edit);
-    var canDelete = User.HasClaim(StudentProfilePermissions.ClaimType, StudentProfilePermissions.Delete);
+    var canEdit = await PermissionService.IsAllowedAsync(User, null, "Student", "Edit");
+    var canDelete = await PermissionService.IsAllowedAsync(User, null, "Student", "Delete");
 }
 
 <section class="student-portal-form">

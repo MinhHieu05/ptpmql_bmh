@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DemoMVC.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [Route("Admin")]
     public sealed class AdminController : Controller
     {
